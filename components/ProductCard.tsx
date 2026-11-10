@@ -3,13 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useWishlist } from "@/lib/WishlistContext";
-import { useCart } from "@/lib/CartContext"; // 👈 Imported Cart
+import { useCart } from "@/lib/CartContext";
 import { formatBDT } from "@/lib/data";
 import type { Product } from "@/lib/ProductsContext";
 
 export default function ProductCard({ product }: { product: Product }) {
   const wishlist = useWishlist();
-  const cart = useCart(); // 👈 Initialize Cart
+  const cart = useCart();
   const inWishlist = wishlist.has(product.id);
   const [imgFailed, setImgFailed] = useState(false);
 
@@ -18,25 +18,23 @@ export default function ProductCard({ product }: { product: Product }) {
     ? Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)
     : 0;
 
-  // 👈 Function to handle adding to cart
   const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault(); // Stops the link from opening the product page
+    e.preventDefault();
     e.stopPropagation();
     
-    cart.addItem({
-      productId: product.id,
-      title: product.title,
-      price: product.price,
-      quantity: 1,
-      image: product.image,
-    });
+    const defaultColorId = product.colors?.[0]?.id || "default";
+    const defaultSize = product.sizes?.[0] || "default";
+    const colorLabel = product.colors?.[0]?.label || "Default";
+
+    // Uses the cdb logic to add item
+    cart.add(product.id, defaultColorId, defaultSize, 1, colorLabel);
     
-    // Optional: You can add a toast notification here later
     alert(`${product.title} added to cart!`); 
   };
 
   return (
     <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-[#FAD4DD] bg-white shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+      
       {/* Wishlist Heart */}
       <button
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); wishlist.toggle(product.id); }}
@@ -83,7 +81,7 @@ export default function ProductCard({ product }: { product: Product }) {
         </div>
       </Link>
 
-      {/* 👈 ADD TO CART BUTTON */}
+      {/* Add to Cart Button */}
       <div className="px-3 pb-3 mt-auto">
         <button
           onClick={handleAddToCart}

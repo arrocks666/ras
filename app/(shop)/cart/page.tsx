@@ -17,14 +17,16 @@ export default function CartPage() {
   const cartRows = useMemo(() => {
     return cart.items
       .map((item) => {
+        // If it's a live product, use the snapshot
         if (item.isLive && item.liveSnapshot) {
           return {
-            key: `${item.productId}-${item.colorId}`,
+            key: `${item.productId}-${item.colorId}-${item.size || ""}`,
             productId: item.productId,
             title: item.liveSnapshot.title,
             image: item.liveSnapshot.image,
             price: item.liveSnapshot.price,
             colorId: item.colorId,
+            colorLabel: item.colorLabel,
             size: item.size,
             quantity: item.quantity,
             lineTotal: item.liveSnapshot.price * item.quantity,
@@ -32,15 +34,19 @@ export default function CartPage() {
             isLive: true,
           };
         }
+        
+        // Otherwise, find it in the normal products database
         const product = products.find((p) => p.id === item.productId);
         if (!product) return null;
+        
         return {
-          key: `${item.productId}-${item.colorId}`,
+          key: `${item.productId}-${item.colorId}-${item.size || ""}`,
           productId: product.id,
           title: product.title,
           image: product.image,
           price: product.price,
           colorId: item.colorId,
+          colorLabel: item.colorLabel,
           size: item.size,
           quantity: item.quantity,
           lineTotal: product.price * item.quantity,
@@ -50,10 +56,9 @@ export default function CartPage() {
       })
       .filter(Boolean) as Array<{
       key: string; productId: string; title: string; image: string;
-      price: number; colorId: string; size?: string; quantity: number;
+      price: number; colorId: string; colorLabel?: string; size?: string; quantity: number;
       lineTotal: number; href: string; isLive: boolean;
     }>;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cart.items, products]);
 
   const isSelected = (key: string) => selected[key] !== false;
@@ -141,8 +146,17 @@ export default function CartPage() {
                     <Link href={row.href}>
                       <h3 className="text-sm font-semibold leading-tight text-[#2B1A24] line-clamp-2 md:text-base">{row.title}</h3>
                     </Link>
-                    <div className="mt-1 flex items-center gap-2">
-                      {row.size && <span className="rounded bg-[#FFF6F6] px-2 py-0.5 text-[10px] font-medium text-[#6B5558]">Size: {row.size}</span>}
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      {row.colorLabel && (
+                        <span className="rounded bg-[#FFF6F6] px-2 py-0.5 text-[10px] font-medium text-[#6B5558]">
+                          Color: {row.colorLabel}
+                        </span>
+                      )}
+                      {row.size && (
+                        <span className="rounded bg-[#FFF6F6] px-2 py-0.5 text-[10px] font-medium text-[#6B5558]">
+                          Size: {row.size}
+                        </span>
+                      )}
                     </div>
                     <div className="mt-2 text-base font-bold text-[#E8546B] md:text-lg">{formatBDT(row.price)}</div>
                   </div>
