@@ -1,0 +1,4 @@
+// lib/data.ts
+export function formatBDT(amount: number): string {
+  return `৳${amount.toLocaleString("en-BD")}`;
+}

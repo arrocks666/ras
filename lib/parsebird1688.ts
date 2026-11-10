@@ -1,0 +1,151 @@
+// lib/parsebird1688.ts
+import * as dotenv from "dotenv";
+dotenv.config({ path: ".env.local" });
+
+const APIFY_TOKEN = process.env.APIFY_TOKEN;
+const APIFY_PARSEBIRD_ACTOR_ID = process.env.APIFY_PARSEBIRD_ACTOR_ID || "parsebird~1688-wholesale-scraper";
+if (!APIFY_TOKEN) throw new Error("Missing APIFY_TOKEN in .env.local");
+
+const POLL_INTERVAL_MS = 5000;
+const MAX_WAIT_MS = 10 * 60 * 1000;
+const RETRY_DELAY_MS = 2000;
+
+export type ParsebirdVariant = { specId: string; skuId: string; priceCny: number; discountPriceCny: number; stock?: number; };
+export type ParsebirdListing = {
+  offerId: string; title: string; detailUrl: string; priceMinCny: number; priceMaxCny: number;
+  images: string[]; mainImage: string; descriptionImages: string[]; salesCount: number;
+  unitWeightKg: number; minOrderQuantity: number; supplierName: string; location: string;
+  skuColors: { name: string; imageUrl?: string }[]; skuVariants: ParsebirdVariant[];
+};
+
+type RawParsebirdProduct = {
+  offerId?: string | number; title?: string; detailUrl?: string;
+  price?: { min?: number; max?: number; currency?: string };
+  images?: string[]; descriptionImages?: string[];
+  saledCount?: number | null; orderCount?: number | null; recentSoldCount?: number | null;
+  unitWeight?: number | null; minOrderQuantity?: number | null;
+  supplier?: { companyName?: string }; shipping?: { location?: string | null };
+  skuDetails?: { totalVariants?: number; properties?: { name?: string; values?: { name?: string; imageUrl?: string }[] }[]; variants?: { specId?: string; skuId?: string; price?: number | string; discountPrice?: number | string; originalPrice?: number | string; stock?: number | null; }[]; };
+};
+
+function isRealProductImage(url: string): boolean {
+  if (!url || typeof url !== "string") return false;
+  if (!url.startsWith("http")) return false;
+  if (url.includes("cbu01.alicdn.com/img/ibank/")) return true;
+  if (url.includes("cbu01.alicdn.com/cms/")) return true;
+  return false;
+}
+
+function pickMainImage(product: RawParsebirdProduct): string {
+  const all = [...(product.descriptionImages ?? []), ...(product.images ?? [])];
+  const real = all.filter(isRealProductImage);
+  return real[0] ?? "";
+}
+
+function parseSalesCount(product: RawParsebirdProduct): number {
+  return product.saledCount ?? product.recentSoldCount ?? product.orderCount ?? 0;
+}
+
+async function startRun(input: Record<string, unknown>): Promise<string> {
+  const url = `https://api.apify.com/v2/acts/${APIFY_PARSEBIRD_ACTOR_ID}/runs?token=${APIFY_TOKEN}`;
+  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) });
+  if (!res.ok) { const text = await res.text(); throw new Error(`Failed to start actor (${res.status}): ${text}`); }
+  const data = await res.json();
+  const runId = data?.data?.id;
+  if (!runId) throw new Error("No run ID returned");
+  return runId;
+}
+
+async function waitForRun(runId: string): Promise<void> {
+  const start = Date.now();
+  while (Date.now() - start < MAX_WAIT_MS) {
+    const url = `https://api.apify.com/v2/actor-runs/${runId}?token=${APIFY_TOKEN}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Failed to check run (${res.status})`);
+    const data = await res.json();
+    const status = data?.data?.status;
+    if (status === "SUCCEEDED") return;
+    if (status === "FAILED" || status === "ABORTED" || status === "TIMED-OUT") throw new Error(`Actor run ended: ${status}`);
+    await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+  }
+  throw new Error("Actor run timed out");
+}
+
+async function fetchRunResults(runId: string): Promise<RawParsebirdProduct[]> {
+  const url = `https://api.apify.com/v2/actor-runs/${runId}/dataset/items?token=${APIFY_TOKEN}&clean=true`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch results (${res.status})`);
+  return (await res.json()) as RawParsebirdProduct[];
+}
+
+function transformListings(items: RawParsebirdProduct[]): ParsebirdListing[] {
+  const listings: ParsebirdListing[] = [];
+  for (const p of items) {
+    const offerId = String(p.offerId ?? "");
+    if (!offerId) continue;
+    const mainImage = pickMainImage(p);
+    if (!mainImage) continue;
+    const priceMin = Number(p.price?.min) || 0;
+    if (priceMin <= 0) continue;
+
+    const skuColors: ParsebirdListing["skuColors"] = [];
+    const skuVariants: ParsebirdVariant[] = [];
+
+    if (p.skuDetails?.properties) {
+      for (const prop of p.skuDetails.properties) {
+        if (prop.values) for (const val of prop.values) if (val.name) skuColors.push({ name: val.name, imageUrl: val.imageUrl });
+      }
+    }
+
+    if (p.skuDetails?.variants) {
+      for (const v of p.skuDetails.variants) {
+        if (!v.specId) continue;
+        const priceNum = Number(v.price) || 0;
+        const discountNum = Number(v.discountPrice ?? v.price) || priceNum;
+        skuVariants.push({ specId: v.specId, skuId: v.skuId ?? "", priceCny: priceNum, discountPriceCny: discountNum, stock: v.stock ?? undefined });
+      }
+    }
+
+    const rawWeight = Number(p.unitWeight) || 0;
+    const unitWeightKg = rawWeight > 0 ? rawWeight / 1000 : 0;
+
+    listings.push({
+      offerId, title: (p.title ?? "").trim(), detailUrl: p.detailUrl ?? `https://detail.1688.com/offer/${offerId}.html`,
+      priceMinCny: priceMin, priceMaxCny: Number(p.price?.max) || priceMin,
+      images: p.images ?? [], mainImage, descriptionImages: p.descriptionImages ?? [],
+      salesCount: parseSalesCount(p), unitWeightKg, minOrderQuantity: Number(p.minOrderQuantity) || 1,
+      supplierName: p.supplier?.companyName ?? "1688 Supplier", location: p.shipping?.location ?? "",
+      skuColors, skuVariants,
+    });
+  }
+  listings.sort((a, b) => b.salesCount - a.salesCount);
+  return listings;
+}
+
+export async function parsebirdSearch(keyword: string, maxResults: number, maxRetries: number = 3): Promise<ParsebirdListing[]> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const input = { keywords: [keyword], maxResults, includeDescriptionHtml: false, includeSkuDetails: true, includeSupplierIntelligence: false };
+    try {
+      const runId = await startRun(input);
+      await waitForRun(runId);
+      const items = await fetchRunResults(runId);
+      if (items.length > 0) return transformListings(items);
+      if (attempt < maxRetries) await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+    } catch (err: any) {
+      if (attempt < maxRetries) await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+    }
+  }
+  return [];
+}
+
+export async function parsebirdByOfferId(offerId: string): Promise<ParsebirdListing | null> {
+  const input = { offerIds: [offerId], maxResults: 1, includeDescriptionHtml: false, includeSkuDetails: true, includeSupplierIntelligence: false };
+  try {
+    const runId = await startRun(input);
+    await waitForRun(runId);
+    const items = await fetchRunResults(runId);
+    if (items.length === 0) return null;
+    const listings = transformListings(items);
+    return listings[0] ?? null;
+  } catch (err) { return null; }
+}
