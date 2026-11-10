@@ -3,11 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useWishlist } from "@/lib/WishlistContext";
+import { useCart } from "@/lib/CartContext"; // 👈 Imported Cart
 import { formatBDT } from "@/lib/data";
 import type { Product } from "@/lib/ProductsContext";
 
 export default function ProductCard({ product }: { product: Product }) {
   const wishlist = useWishlist();
+  const cart = useCart(); // 👈 Initialize Cart
   const inWishlist = wishlist.has(product.id);
   const [imgFailed, setImgFailed] = useState(false);
 
@@ -15,6 +17,23 @@ export default function ProductCard({ product }: { product: Product }) {
   const discountPercent = product.oldPrice > product.price
     ? Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)
     : 0;
+
+  // 👈 Function to handle adding to cart
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault(); // Stops the link from opening the product page
+    e.stopPropagation();
+    
+    cart.addItem({
+      productId: product.id,
+      title: product.title,
+      price: product.price,
+      quantity: 1,
+      image: product.image,
+    });
+    
+    // Optional: You can add a toast notification here later
+    alert(`${product.title} added to cart!`); 
+  };
 
   return (
     <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-[#FAD4DD] bg-white shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
@@ -63,6 +82,16 @@ export default function ProductCard({ product }: { product: Product }) {
           </div>
         </div>
       </Link>
+
+      {/* 👈 ADD TO CART BUTTON */}
+      <div className="px-3 pb-3 mt-auto">
+        <button
+          onClick={handleAddToCart}
+          className="w-full rounded-xl bg-[#E8546B] py-2 text-xs font-bold text-white transition-colors hover:bg-[#c9465a] shadow-orange-glow"
+        >
+          Add to Cart
+        </button>
+      </div>
     </div>
   );
 }
