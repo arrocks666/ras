@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CATEGORIES } from "@/lib/categories";
 import type { LiveProduct } from "@/lib/liveProduct";
 import { formatBDT } from "@/lib/data";
@@ -16,8 +16,23 @@ export default function AddProductModal({ open, product, onClose, onAdded }: Pro
   const [categoryId, setCategoryId] = useState("");
   const [subcategory, setSubcategory] = useState("");
   const [isTrending, setIsTrending] = useState(false);
+  
+  // ✅ NEW: Availability State
+  const [inStock, setInStock] = useState(true); 
+  
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  // Reset state when modal opens
+  useEffect(() => {
+    if (open) {
+      setCategoryId("");
+      setSubcategory("");
+      setIsTrending(false);
+      setInStock(true);
+      setError("");
+    }
+  }, [open]);
 
   if (!open || !product) return null;
 
@@ -34,7 +49,8 @@ export default function AddProductModal({ open, product, onClose, onAdded }: Pro
       const res = await fetch("/api/admin/add-product", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ product, categoryId, subcategory, isTrending }),
+        // ✅ We pass inStock to the backend
+        body: JSON.stringify({ product, categoryId, subcategory, isTrending, inStock }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -74,16 +90,39 @@ export default function AddProductModal({ open, product, onClose, onAdded }: Pro
           </select>
         </div>
 
-        {/* Subcategory */}
+        {/* Subcategory (Fixed to use object.name) */}
         {selectedCategory && (
           <div className="mb-4">
             <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[#6B5558]">Subcategory</label>
             <select value={subcategory} onChange={(e) => setSubcategory(e.target.value)} className="w-full rounded-lg border border-[#FAD4DD] bg-[#FFF6F6] px-4 py-2.5 text-sm focus:border-[#E8546B] focus:outline-none">
               <option value="">Any</option>
-              {selectedCategory.subcategories.map((s) => <option key={s} value={s}>{s}</option>)}
+              {selectedCategory.subcategories.map((s) => (
+                <option key={s.slug} value={s.name}>{s.name}</option>
+              ))}
             </select>
           </div>
         )}
+
+        {/* ✅ NEW: Availability Toggles */}
+        <div className="mb-4">
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#6B5558]">Availability *</label>
+          <div className="flex gap-3">
+            <button 
+              onClick={() => setInStock(true)}
+              className={`flex-1 rounded-lg border p-3 text-left transition-all ${inStock ? 'border-[#E8546B] bg-[#FFF6F6] ring-1 ring-[#E8546B]' : 'border-[#FAD4DD] bg-white'}`}
+            >
+              <p className="text-sm font-bold text-[#2B1A24]">In Stock</p>
+              <p className="text-[10px] text-[#6B5558]">Ready to ship</p>
+            </button>
+            <button 
+              onClick={() => setInStock(false)}
+              className={`flex-1 rounded-lg border p-3 text-left transition-all ${!inStock ? 'border-[#E8546B] bg-[#FFF6F6] ring-1 ring-[#E8546B]' : 'border-[#FAD4DD] bg-white'}`}
+            >
+              <p className="text-sm font-bold text-[#2B1A24]">Pre-Order</p>
+              <p className="text-[10px] text-[#6B5558]">Coming soon</p>
+            </button>
+          </div>
+        </div>
 
         {/* Popular Toggle */}
         <div className="mb-4 flex items-center gap-3 rounded-lg border border-[#FAD4DD] bg-[#FFF6F6] p-3">

@@ -5,7 +5,8 @@ import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { product, categoryId, subcategory, isTrending } = body;
+    // ✅ Extract inStock from the body
+    const { product, categoryId, subcategory, isTrending, inStock } = body;
 
     if (!product || !product.id) {
       return NextResponse.json({ error: "Invalid product data" }, { status: 400 });
@@ -22,7 +23,8 @@ export async function POST(req: Request) {
       isTrending: !!isTrending,
       isFlashSale: false,
       isLive: true,
-      inStock: true,
+      // ✅ Use the passed inStock, but default to true if undefined
+      inStock: inStock !== undefined ? inStock : true, 
       updatedAt: serverTimestamp(),
       createdAt: serverTimestamp(),
     };

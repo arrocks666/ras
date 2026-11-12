@@ -12,30 +12,49 @@ export type StoreSettings = {
   logoUrl: string;
   ownerName: string;
   footerDescription: string;
+  
+  // Contact Info
   contactPhone: string;
   contactEmail: string;
   contactAddress: string;
   contactHours: string;
+
+  // Social Links
   facebookUrl: string;
   instagramUrl: string;
   whatsappNumber: string;
   whatsappChatNumber: string;
+
+  // Store Policies
   shippingCharge: number;
   estimatedDeliveryDays: string;
   shippingRates: ShippingRate[];
+  
+  // Payment Info
   bkashNumber: string;
   nagadNumber: string;
   bankName: string;
   bankAccountNumber: string;
   bankAccountHolder: string;
+
+  // Marketing
   newsletterTitle: string;
   newsletterSubtitle: string;
+
+  // Pricing
   cnyToUsd: number;
   usdToBdt: number;
   markupTiers: MarkupTier[];
+  
+  // Inspection Prices
+  videoInspectionPrice: number;
+  basicInspectionPrice: number;
+
+  // Content
   faqItems: FaqItem[];
   footerInfoLinks: FooterLink[];
   footerHelpLinks: FooterLink[];
+  
   updatedAt?: unknown;
 };
 
@@ -111,6 +130,8 @@ export const DEFAULT_SETTINGS: StoreSettings = {
   faqItems: DEFAULT_FAQS,
   footerInfoLinks: DEFAULT_FOOTER_INFO_LINKS,
   footerHelpLinks: DEFAULT_FOOTER_HELP_LINKS,
+  videoInspectionPrice: 180,
+  basicInspectionPrice: 50,
 };
 
 const SETTINGS_DOC = ["settings", "general"] as const;
@@ -121,7 +142,6 @@ let memoryCache: StoreSettings | null = null;
 
 export async function loadSettings(): Promise<StoreSettings> {
   if (memoryCache) return memoryCache;
-
   try {
     const raw = localStorage.getItem(CACHE_KEY);
     if (raw) {
@@ -145,29 +165,16 @@ export async function loadSettings(): Promise<StoreSettings> {
       result = {
         ...DEFAULT_SETTINGS,
         ...data,
-        // ✅ ENSURE ALL ARRAY FIELDS ARE ALWAYS DEFINED
-        markupTiers: Array.isArray(data.markupTiers) && data.markupTiers.length > 0
-          ? data.markupTiers
-          : DEFAULT_MARKUP_TIERS,
-        faqItems: Array.isArray(data.faqItems) && data.faqItems.length > 0
-          ? data.faqItems
-          : DEFAULT_FAQS,
-        shippingRates: Array.isArray(data.shippingRates) && data.shippingRates.length > 0
-          ? data.shippingRates
-          : DEFAULT_SHIPPING_RATES,
-        footerInfoLinks: Array.isArray(data.footerInfoLinks) && data.footerInfoLinks.length > 0
-          ? data.footerInfoLinks
-          : DEFAULT_FOOTER_INFO_LINKS,
-        footerHelpLinks: Array.isArray(data.footerHelpLinks) && data.footerHelpLinks.length > 0
-          ? data.footerHelpLinks
-          : DEFAULT_FOOTER_HELP_LINKS,
+        markupTiers: Array.isArray(data.markupTiers) && data.markupTiers.length > 0 ? data.markupTiers : DEFAULT_MARKUP_TIERS,
+        faqItems: Array.isArray(data.faqItems) && data.faqItems.length > 0 ? data.faqItems : DEFAULT_FAQS,
+        shippingRates: Array.isArray(data.shippingRates) && data.shippingRates.length > 0 ? data.shippingRates : DEFAULT_SHIPPING_RATES,
+        footerInfoLinks: Array.isArray(data.footerInfoLinks) && data.footerInfoLinks.length > 0 ? data.footerInfoLinks : DEFAULT_FOOTER_INFO_LINKS,
+        footerHelpLinks: Array.isArray(data.footerHelpLinks) && data.footerHelpLinks.length > 0 ? data.footerHelpLinks : DEFAULT_FOOTER_HELP_LINKS,
       };
     }
 
     memoryCache = result;
-    try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ data: result, cachedAt: Date.now() }));
-    } catch {}
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data: result, cachedAt: Date.now() })); } catch {}
     return result;
   } catch (err) {
     console.error("Error loading settings:", err);
@@ -177,9 +184,7 @@ export async function loadSettings(): Promise<StoreSettings> {
 
 export function invalidateSettingsCache() {
   memoryCache = null;
-  try {
-    localStorage.removeItem(CACHE_KEY);
-  } catch {}
+  try { localStorage.removeItem(CACHE_KEY); } catch {}
 }
 
 export async function saveSettings(partial: Partial<StoreSettings>): Promise<void> {

@@ -1,17 +1,18 @@
 "use client";
 
-import { ReactNode } from "react";
-import Header from "./Header";
-import Footer from "./Footer";
-import BottomNav from "./BottomNav";
+import { usePathname } from "next/navigation";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
-export default function AppShell({ children }: { children: ReactNode }) {
+export default function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isAdmin = pathname.startsWith("/control-room");
+
   return (
-    <div className="flex min-h-screen flex-col bg-[#FFF6F6]">
-      <Header />
-      <main className="flex-1 pb-16 md:pb-0">{children}</main>
-      <Footer />
-      <BottomNav />
-    </div>
+    <>
+      {!isAdmin && <Header />}
+      <main className="flex-1">{children}</main>
+      {!isAdmin && <Footer />}
+    </>
   );
 }

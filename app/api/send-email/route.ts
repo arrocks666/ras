@@ -3,30 +3,40 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+const REPLY_TO_EMAIL = process.env.RESEND_REPLY_TO || "orderchinadailybazar@gmail.com";
+
 export async function POST(req: Request) {
   try {
-    const { to, subject, html, replyTo } = await req.json();
+    const body = await req.json();
+    const { to, subject, html } = body;
 
     if (!to || !subject || !html) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      return NextResponse.json({ error: "Missing required fields: to, subject, html" }, { status: 400 });
     }
 
-    // ⚠️ IMPORTANT: You MUST use a verified domain with Resend.
-    // If you are testing, use "onboarding@resend.dev" as the from address.
-    // For production, use "orders@yourdomain.com".
-    const fromAddress = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+    if (!process.env.RESEND_API_KEY) {
+      console.error("❌ RESEND_API_KEY not set in .env.local");
+      return NextResponse.json({ error: "Email service not configured" }, { status: 500 });
+    }
 
-    const data = await resend.emails.send({
-      from: `Ratry's Artistry Shop <${fromAddress}>`,
+    const { data, error } = await resend.emails.send({
+      from: `Ratry's Artistry Shop <${FROM_EMAIL}>`,
       to: [to],
-      subject: subject,
-      html: html,
-      reply_to: replyTo || fromAddress,
+      subject,
+      html,
+      replyTo: REPLY_TO_EMAIL,
     });
 
-    return NextResponse.json({ success: true, data });
-  } catch (error: any) {
-    console.error("Email API error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      console.error("❌ Resend error:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    console.log(`✅ Email sent to ${to} (ID: ${data?.id})`);
+    return NextResponse.json({ success: true, id: data?.id });
+  } catch (err: any) {
+    console.error("❌ Send email API error:", err);
+    return NextResponse.json({ error: err.message || "Failed to send email" }, { status: 500 });
   }
 }

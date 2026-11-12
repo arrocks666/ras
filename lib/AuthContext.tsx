@@ -37,6 +37,7 @@ type AuthContextType = {
   login: (phone: string, password: string) => Promise<void>;
   signup: (phone: string, password: string, name?: string) => Promise<void>;
   logout: () => Promise<void>;
+  updateProfile: (data: Partial<UserProfile>) => Promise<void>; // ✅ NEW
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -80,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Save user document
     await setDoc(doc(db, "users", cred.user.uid), {
       phone: normalized,
-      email,
+      email, // Store the fake email as default
       name: name || "",
       savedAddress: {},
     });
@@ -100,8 +101,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
   };
 
+  // ✅ NEW: Update Profile Function
+  const updateProfile = async (data: Partial<UserProfile>) => {
+    if (!user) throw new Error("Not logged in");
+    
+    // Save to Firestore with merge: true so we don't overwrite the whole doc
+    await setDoc(doc(db, "users", user.uid), data, { merge: true });
+    
+    // Instantly update the local state so the UI reflects the changes
+    setProfile((prev) => prev ? { ...prev, ...data } : null);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, profile, loading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, profile, loading, login, signup, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );
