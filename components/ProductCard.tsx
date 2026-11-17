@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { formatBDT } from "@/lib/data";
 import { Product } from "@/lib/ProductsContext";
@@ -9,12 +10,14 @@ import { useWishlist } from "@/lib/WishlistContext";
 export default function ProductCard({ product }: { product: Product }) {
   const cart = useCart();
   const wishlist = useWishlist();
+  const [imgFailed, setImgFailed] = useState(false);
 
   const saved = wishlist.has(product.id);
   const discountPercent =
     product.oldPrice && product.oldPrice > product.price
       ? Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)
       : 0;
+  const showImage = !!product.image && !imgFailed;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -33,13 +36,20 @@ export default function ProductCard({ product }: { product: Product }) {
       href={`/product/${product.id}`}
       className="group flex flex-col overflow-hidden rounded-2xl border border-[#FAD4DD] bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
     >
-      {/* image — always a perfect square */}
       <div className="relative aspect-square w-full overflow-hidden bg-[#F9F9F9]">
-        <img
-          src={product.image}
-          alt={product.title}
-          className="absolute inset-0 h-full w-full object-contain p-2 mix-blend-multiply transition-transform duration-500 group-hover:scale-110"
-        />
+        {showImage ? (
+          <img
+            src={product.image}
+            alt=""
+            className="absolute inset-0 h-full w-full object-contain p-2 mix-blend-multiply transition-transform duration-500 group-hover:scale-110"
+            onError={() => setImgFailed(true)}
+          />
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-gradient-to-br from-[#FFF6F6] to-[#FDE8EC]">
+            <span className="text-3xl opacity-50">🖼️</span>
+            <span className="text-[9px] font-bold uppercase tracking-wider text-[#C4A2B1]">No photo</span>
+          </div>
+        )}
 
         {discountPercent > 0 && (
           <span className="absolute left-2 top-2 rounded-full bg-[#E8546B] px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
@@ -47,7 +57,6 @@ export default function ProductCard({ product }: { product: Product }) {
           </span>
         )}
 
-        {/* WISHLIST HEART — top right */}
         <button
           onClick={toggleWishlist}
           aria-label={saved ? "Remove from wishlist" : "Add to wishlist"}

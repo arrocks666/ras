@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/lib/CartContext";
 import { useWishlist } from "@/lib/WishlistContext";
@@ -9,12 +10,14 @@ import type { Product } from "@/lib/ProductsContext";
 export default function MobileProductCard({ product }: { product: Product }) {
   const cart = useCart();
   const wishlist = useWishlist();
+  const [imgFailed, setImgFailed] = useState(false);
 
   const saved = wishlist.has(product.id);
   const price = product.price ?? 0;
   const oldPrice = product.oldPrice ?? 0;
   const discount =
     oldPrice > price && oldPrice > 0 ? Math.round(((oldPrice - price) / oldPrice) * 100) : 0;
+  const showImage = !!product.image && !imgFailed;
 
   const addToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -34,12 +37,20 @@ export default function MobileProductCard({ product }: { product: Product }) {
       className="group flex flex-col overflow-hidden rounded-[18px] bg-white shadow-[0_6px_18px_-10px_rgba(228,33,111,0.45)] transition-transform active:scale-[0.99]"
     >
       <div className="relative aspect-[1/0.94] w-full overflow-hidden bg-[#F7F1F4]">
-        <img
-          src={product.image}
-          alt={product.title}
-          className="absolute inset-0 h-full w-full object-cover"
-          loading="lazy"
-        />
+        {showImage ? (
+          <img
+            src={product.image}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+            loading="lazy"
+            onError={() => setImgFailed(true)}
+          />
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-[#FFF0F5] to-[#FDE4EC]">
+            <span className="text-2xl opacity-60">🖼️</span>
+            <span className="text-[9px] font-bold uppercase tracking-wider text-[#C9A3B3]">No photo</span>
+          </div>
+        )}
 
         {discount > 0 && (
           <span className="absolute left-2 top-2 rounded-full bg-gradient-to-r from-[#F4558F] to-[#E4216F] px-2 py-[3px] text-[10px] font-bold leading-none text-white shadow-sm">
@@ -47,7 +58,6 @@ export default function MobileProductCard({ product }: { product: Product }) {
           </span>
         )}
 
-        {/* WISHLIST HEART — top right */}
         <button
           onClick={toggleWishlist}
           aria-label={saved ? "Remove from wishlist" : "Add to wishlist"}
