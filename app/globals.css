@@ -398,6 +398,17 @@ html, body {
   overflow-x: hidden;
 }
 
+/* ✅ MOBILE ONLY — sticky header fix.
+   `overflow-x: hidden` on html/body turns them into scroll containers,
+   which silently breaks every `position: sticky` element (header, cart /
+   checkout / account sub-bars). `clip` keeps the same visual guard without
+   creating a scroll container. Desktop is untouched. */
+@media (max-width: 767.98px) {
+  html, body {
+    overflow-x: clip;
+  }
+}
+
 /* Smooth mobile base font size */
 @media (max-width: 768px) {
   html {

@@ -28,8 +28,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${poppins.variable} ${playfair.variable} h-full antialiased bg-[#1A1A1A]`}>
-      <body className="min-h-full flex flex-col text-[#2B1A24] items-center">
+    <html lang="en" className={`${poppins.variable} ${playfair.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col bg-[#FFF6F6] text-[#2B1A24]">
         <AuthProvider>
           <ProductsProvider>
             <WishlistProvider>
@@ -37,14 +37,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <OrderProvider>
                   <WhatsAppProvider>
                     <LiveProductProvider>
-                      
-                      {/* ✅ HARD LOCK: Max width, shadow, and border to simulate a phone screen */}
-                      <div className="w-full max-w-[430px] mx-auto bg-[#FFF6F6] min-h-screen shadow-2xl relative overflow-x-hidden lg:max-w-none lg:shadow-none">
-                        <AppShell>
-                          {children}
-                        </AppShell>
-                      </div>
-
+                      <AppShell>
+                        {children}
+                      </AppShell>
                     </LiveProductProvider>
                   </WhatsAppProvider>
                 </OrderProvider>

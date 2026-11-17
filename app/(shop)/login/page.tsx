@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/AuthContext";
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
-  
+
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,7 +24,6 @@ export default function LoginPage() {
       router.push("/");
     } catch (err: any) {
       console.error(err);
-      // Clean up Firebase error messages
       if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password") {
         setError("Invalid phone number or password.");
       } else if (err.code === "auth/user-not-found") {
@@ -40,8 +39,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#FFF6F6] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
-        
-        {/* HEADER */}
         <div className="text-center mb-8">
           <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#E8546B] to-[#FF8B9A] text-2xl font-bold text-white shadow-lg mb-4">
             R
@@ -50,7 +47,6 @@ export default function LoginPage() {
           <p className="mt-2 text-sm text-[#6B5558]">Login to your account to continue shopping.</p>
         </div>
 
-        {/* LOGIN CARD */}
         <div className="rounded-3xl border border-[#FAD4DD] bg-white p-6 md:p-8 shadow-soft">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -96,28 +92,25 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* FORGOT PASSWORD LINK */}
           <div className="mt-4 text-center">
-            <Link href="/reset-password" className="text-xs font-bold text-[#E8546B] hover:underline">
+            <Link href="/forgot-password" className="text-xs font-bold text-[#E8546B] hover:underline">
               Forgot Password?
             </Link>
           </div>
         </div>
 
-        {/* SIGNUP LINK */}
         <p className="mt-6 text-center text-sm text-[#6B5558]">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <Link href="/signup" className="font-bold text-[#E8546B] hover:underline">
             Sign Up
           </Link>
         </p>
 
-        {/* TERMS */}
         <p className="mt-8 text-center text-[10px] text-[#A88F92]">
           By logging in, you agree to our{" "}
-          <Link href="/terms" className="hover:text-[#E8546B] underline">Terms</Link>
+          <Link href="/terms" className="underline hover:text-[#E8546B]">Terms</Link>
           {" & "}
-          <Link href="/privacy" className="hover:text-[#E8546B] underline">Privacy Policy</Link>
+          <Link href="/privacy" className="underline hover:text-[#E8546B]">Privacy Policy</Link>
         </p>
       </div>
     </div>

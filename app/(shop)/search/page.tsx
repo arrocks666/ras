@@ -21,7 +21,7 @@ function SearchContent() {
   const [imageLoading, setImageLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 999999]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([100, 100000]);
   const [sortBy, setSortBy] = useState("default");
   const [availabilityFilter, setAvailabilityFilter] = useState<"all" | "in-stock" | "pre-order">("all");
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
@@ -134,7 +134,7 @@ function SearchContent() {
   }, [products, categoryParam, subcategoryParam, query, isImageSearch, imageResults, priceRange, sortBy, availabilityFilter]);
 
   const clearFilters = () => {
-    setPriceRange([0, 999999]);
+    setPriceRange([100, 100000]);
     setSortBy("default");
     setAvailabilityFilter("all");
     if (categoryParam || subcategoryParam) router.push('/search');
@@ -142,7 +142,7 @@ function SearchContent() {
 
   return (
     <div className="min-h-screen bg-[#FFF6F6] pb-20">
-      <div className="bg-white border-b border-[#FAD4DD] mb-6">
+      <div className="bg-white border-b border-[#FAD4DD] mb-3">
         <div className="mx-auto max-w-[1400px] px-4 py-5 flex items-baseline gap-4">
           <h1 className="font-serif text-2xl md:text-3xl font-bold text-[#2B1A24]">
             {isImageSearch
@@ -213,7 +213,7 @@ function SearchContent() {
                   <h3 className="font-bold text-[#2B1A24] mb-4 text-sm uppercase tracking-wider">Price Range</h3>
                   <div className="space-y-4">
                     <input 
-                      type="range" min="0" max="999999" step="100"
+                      type="range" min="100" max="100000" step="100"
                       value={priceRange[1]}
                       onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
                       className="w-full accent-[#E8546B] cursor-pointer"
@@ -235,7 +235,7 @@ function SearchContent() {
 
           <div className="flex-1 min-w-0">
             {!isImageSearch && (
-              <div className="md:hidden mb-4 flex justify-end">
+              <div className="md:hidden mb-3 flex justify-start">
                 <button onClick={() => setMobileFilterOpen(true)} className="flex items-center gap-2 rounded-full border border-[#FAD4DD] bg-white px-4 py-2 text-sm font-bold text-[#2B1A24] shadow-sm">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
                   Filters
@@ -251,7 +251,7 @@ function SearchContent() {
             ) : displayProducts.length > 0 ? (
               <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
                 {displayProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard key={product.id} product={product as any} />
                 ))}
               </div>
             ) : (
@@ -299,7 +299,7 @@ function SearchContent() {
 
               <div>
                 <h4 className="font-bold text-[#2B1A24] mb-3 text-sm uppercase">Price Range</h4>
-                <input type="range" min="0" max="999999" step="100" value={priceRange[1]} onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])} className="w-full accent-[#E8546B] cursor-pointer" />
+                <input type="range" min="100" max="100000" step="100" value={priceRange[1]} onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])} className="w-full accent-[#E8546B] cursor-pointer" />
                 <div className="flex items-center justify-between text-sm font-bold text-[#2B1A24] mt-3">
                   <span className="bg-[#FFF6F6] px-2 py-1 rounded">৳{priceRange[0]}</span>
                   <span>-</span>

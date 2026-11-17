@@ -73,41 +73,55 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         <div className="mx-auto max-w-7xl px-4 py-20 text-center">
           <div className="text-6xl opacity-40">📦</div>
           <h1 className="mt-4 text-xl font-bold text-[#2B1A24]">Order not found</h1>
-          <Link href="/orders" className="mt-5 inline-block rounded-full bg-[#E8546B] px-6 py-2.5 text-xs font-semibold text-white shadow-orange-glow">View My Orders</Link>
+          <Link href="/orders" className="mt-5 inline-block rounded-full bg-[#E8546B] px-6 py-2.5 text-xs font-semibold text-white shadow-orange-glow">
+            View My Orders
+          </Link>
         </div>
       </div>
     );
   }
 
   const currentIndex = STATUS_ORDER.indexOf(order.status);
-  const createdDate = new Date(order.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-  
+  const createdDate = new Date(order.createdAt).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
   const payments = order.payments ?? [];
   const totalPaid = order.paidAmount ?? 0;
   const totalDue = Math.max(0, order.total - totalPaid);
 
   return (
     <div className="min-h-screen bg-[#FFF6F6] pb-24 md:pb-10">
-      
-      <div className="sticky top-[56px] z-40 border-b border-[#FAD4DD] bg-white/95 backdrop-blur-md shadow-sm md:top-[60px]">
+      <div className="sticky top-16 z-40 border-b border-[#FAD4DD] bg-white/95 backdrop-blur-md shadow-sm md:top-0">
         <div className="mx-auto flex max-w-[1400px] items-center gap-3 px-4 py-3">
-          <button onClick={() => router.push("/orders")} className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFF6F6] text-[#2B1A24] hover:bg-[#FAD4DD] transition-colors">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+          <button
+            onClick={() => router.push("/orders")}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFF6F6] text-[#2B1A24] transition-colors hover:bg-[#FAD4DD]"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
           </button>
           <div className="flex-1">
             <h1 className="text-lg font-bold leading-none text-[#2B1A24] md:text-xl">Order Details</h1>
             <p className="mt-0.5 text-[11px] text-[#6B5558] md:text-xs">#{order.id}</p>
           </div>
-          <button onClick={handleDownloadInvoice} disabled={downloading} className="flex items-center gap-2 rounded-full bg-[#E8546B]/10 px-3 py-1.5 text-xs font-bold text-[#E8546B] hover:bg-[#E8546B]/20 transition-colors">
+          <button
+            onClick={handleDownloadInvoice}
+            disabled={downloading}
+            className="flex items-center gap-2 rounded-full bg-[#E8546B]/10 px-3 py-1.5 text-xs font-bold text-[#E8546B] transition-colors hover:bg-[#E8546B]/20"
+          >
             {downloading ? "..." : "📄 Invoice"}
           </button>
         </div>
       </div>
 
       <div className="mx-auto max-w-3xl px-3 py-5 md:px-4 md:py-8 space-y-5 animate-fade-in">
-        
+        {/* summary */}
         <div className="relative overflow-hidden rounded-3xl border border-[#FAD4DD] bg-white p-6 shadow-soft">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-[#FDE8EC] rounded-bl-full -z-0" />
+          <div className="absolute top-0 right-0 h-32 w-32 rounded-bl-full bg-[#FDE8EC]" />
           <div className="relative z-10 flex items-center justify-between">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wider text-[#A88F92]">Order ID</p>
@@ -124,6 +138,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
 
+        {/* timeline */}
         <div className="rounded-3xl border border-[#FAD4DD] bg-white p-6 shadow-soft">
           <h2 className="mb-6 font-serif text-lg font-bold text-[#2B1A24]">Tracking Timeline</h2>
           <div className="relative pl-2">
@@ -131,38 +146,49 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               const isDone = i < currentIndex;
               const isCurrent = i === currentIndex;
               const note = order.statusNotes?.[status];
-              
+
               return (
-                <div key={status} className="relative flex gap-4 pb-8 last:pb-0 group">
+                <div key={status} className="relative flex gap-4 pb-8 last:pb-0">
                   {i < STATUS_ORDER.length - 1 && (
                     <div className={`absolute left-[15px] top-9 h-[calc(100%-20px)] w-1 rounded-full ${isDone ? "bg-gradient-to-b from-[#E8546B] to-[#FF8B9A]" : "bg-[#FAD4DD]"}`} />
                   )}
-                  
-                  <div className={`relative z-10 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border-2 transition-all duration-500 ${
-                    isDone ? "border-[#E8546B] bg-[#E8546B] text-white shadow-sm" :
-                    isCurrent ? "border-[#E8546B] bg-white text-[#E8546B] scale-110 shadow-[0_0_15px_rgba(232,84,107,0.4)]" :
-                    "border-[#FAD4DD] bg-white text-[#A88F92]"
-                  }`}>
+
+                  <div
+                    className={`relative z-10 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border-2 transition-all duration-500 ${
+                      isDone
+                        ? "border-[#E8546B] bg-[#E8546B] text-white shadow-sm"
+                        : isCurrent
+                        ? "border-[#E8546B] bg-white text-[#E8546B] scale-110 shadow-[0_0_15px_rgba(232,84,107,0.4)]"
+                        : "border-[#FAD4DD] bg-white text-[#A88F92]"
+                    }`}
+                  >
                     {isDone ? (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
                     ) : isCurrent ? (
-                      <span className="h-3 w-3 rounded-full bg-[#E8546B] animate-ping absolute" />
-                    ) : null}
-                    {isCurrent && <span className="h-3 w-3 rounded-full bg-[#E8546B] relative z-10" />}
-                    {!isDone && !isCurrent && <span className="h-2 w-2 rounded-full bg-[#FAD4DD]" />}
+                      <>
+                        <span className="absolute h-3 w-3 animate-ping rounded-full bg-[#E8546B]" />
+                        <span className="relative z-10 h-3 w-3 rounded-full bg-[#E8546B]" />
+                      </>
+                    ) : (
+                      <span className="h-2 w-2 rounded-full bg-[#FAD4DD]" />
+                    )}
                   </div>
 
                   <div className="flex-1 pt-1">
-                    <p className={`text-sm font-bold transition-colors ${isDone ? "text-[#2B1A24]" : isCurrent ? "text-[#E8546B] text-base" : "text-[#A88F92]"}`}>
+                    <p className={`text-sm font-bold transition-colors ${isDone ? "text-[#2B1A24]" : isCurrent ? "text-base text-[#E8546B]" : "text-[#A88F92]"}`}>
                       {STATUS_LABELS[status as OrderStatus]}
                     </p>
                     <p className="mt-0.5 text-[11px] font-medium text-[#6B5558]">
                       {isDone ? "Completed" : isCurrent ? "In progress" : "Pending"}
                     </p>
                     {note && (
-                      <div className={`mt-2 rounded-xl border px-3 py-2 text-[11px] font-medium ${
-                        isCurrent ? "border-[#E8546B]/30 bg-[#FFF6F6] text-[#E8546B]" : "border-[#FAD4DD] bg-white text-[#6B5558]"
-                      }`}>
+                      <div
+                        className={`mt-2 rounded-xl border px-3 py-2 text-[11px] font-medium ${
+                          isCurrent ? "border-[#E8546B]/30 bg-[#FFF6F6] text-[#E8546B]" : "border-[#FAD4DD] bg-white text-[#6B5558]"
+                        }`}
+                      >
                         💬 {note}
                       </div>
                     )}
@@ -173,14 +199,18 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
 
-        <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 flex items-start gap-3 shadow-sm">
+        {/* shipping notice */}
+        <div className="flex items-start gap-3 rounded-2xl border border-orange-200 bg-orange-50 p-4 shadow-sm">
           <div className="text-lg">⚠️</div>
           <div>
             <p className="text-sm font-bold text-orange-700">Shipping Charge Notice</p>
-            <p className="text-xs text-orange-600 mt-1">Shipping charges will be calculated and added to your total after the product is shipped. You can track updates on this page.</p>
+            <p className="mt-1 text-xs text-orange-600">
+              Shipping charges will be calculated and added to your total after the product is shipped. You can track updates on this page.
+            </p>
           </div>
         </div>
 
+        {/* items */}
         <div className="rounded-3xl border border-[#FAD4DD] bg-white p-6 shadow-soft">
           <h2 className="mb-5 font-serif text-lg font-bold text-[#2B1A24]">Order Items</h2>
           <div className="space-y-4">
@@ -195,21 +225,31 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                       <button onClick={() => setFullscreenImage(image)} className="flex h-full w-full items-center justify-center">
                         <img src={image} alt="" className="max-h-full max-w-full object-contain mix-blend-multiply" />
                       </button>
-                    ) : (<span className="text-xl">🎁</span>)}
+                    ) : (
+                      <span className="text-xl">🎁</span>
+                    )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold text-[#2B1A24]">{title}</p>
-                    <p className="mt-1 inline-flex items-center rounded bg-[#FFF6F6] px-2 py-0.5 text-[10px] font-bold text-[#6B5558]">Qty {item.quantity} {item.variant ? `· ${item.variant}` : ""}</p>
+                    <p className="mt-1 inline-flex items-center rounded bg-[#FFF6F6] px-2 py-0.5 text-[10px] font-bold text-[#6B5558]">
+                      Qty {item.quantity} {item.variant ? `· ${item.variant}` : ""}
+                    </p>
                   </div>
                   <span className="text-sm font-bold text-[#E8546B]">{formatBDT(item.price * item.quantity)}</span>
                 </div>
               );
             })}
           </div>
-          
+
           <div className="mt-5 space-y-2 rounded-2xl bg-[#FFF6F6] p-4 text-sm">
-            <div className="flex justify-between text-[#6B5558]"><span>Subtotal</span><span className="font-medium text-[#2B1A24]">{formatBDT(order.subtotal)}</span></div>
-            <div className="flex justify-between text-[#6B5558]"><span>Shipping</span><span className="font-medium text-[#2B1A24]">{formatBDT(order.shipping)}</span></div>
+            <div className="flex justify-between text-[#6B5558]">
+              <span>Subtotal</span>
+              <span className="font-medium text-[#2B1A24]">{formatBDT(order.subtotal)}</span>
+            </div>
+            <div className="flex justify-between text-[#6B5558]">
+              <span>Shipping</span>
+              <span className="font-medium text-[#2B1A24]">{formatBDT(order.shipping)}</span>
+            </div>
             <div className="mt-2 flex justify-between border-t border-[#FAD4DD] pt-3">
               <span className="font-bold text-[#2B1A24]">Total Payable</span>
               <span className="text-lg font-bold text-[#E8546B]">{formatBDT(order.total)}</span>
@@ -217,6 +257,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
 
+        {/* payments */}
         <div className="rounded-3xl border border-[#FAD4DD] bg-white p-6 shadow-soft">
           <h2 className="mb-4 font-serif text-lg font-bold text-[#2B1A24]">Payment History</h2>
           {payments.length === 0 ? (
@@ -226,7 +267,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               {payments.map((p, idx) => (
                 <div key={p.id} className="flex items-center justify-between rounded-xl border border-[#FAD4DD] bg-[#FFF6F6] px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E8546B] text-[11px] font-bold text-white shadow-sm">{idx + 1}</span>
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E8546B] text-[11px] font-bold text-white shadow-sm">
+                      {idx + 1}
+                    </span>
                     <div>
                       <p className="text-sm font-bold text-[#2B1A24]">{formatBDT(p.amount)}</p>
                       <p className="text-[11px] font-medium text-[#6B5558]">{new Date(p.date).toLocaleDateString()}</p>
@@ -238,30 +281,66 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             </div>
           )}
           <div className="mt-5 space-y-2 border-t border-[#FAD4DD] pt-4 text-sm">
-            <div className="flex justify-between text-[#6B5558]"><span>Total Paid</span><span className="font-bold text-green-600">{formatBDT(totalPaid)}</span></div>
-            {totalDue > 0 && <div className="flex justify-between text-[#6B5558]"><span>Remaining Due</span><span className="font-bold text-[#E8546B]">{formatBDT(totalDue)}</span></div>}
+            <div className="flex justify-between text-[#6B5558]">
+              <span>Total Paid</span>
+              <span className="font-bold text-green-600">{formatBDT(totalPaid)}</span>
+            </div>
+            {totalDue > 0 && (
+              <div className="flex justify-between text-[#6B5558]">
+                <span>Remaining Due</span>
+                <span className="font-bold text-[#E8546B]">{formatBDT(totalDue)}</span>
+              </div>
+            )}
           </div>
         </div>
 
+        {/* delivery address */}
+        <div className="rounded-3xl border border-[#FAD4DD] bg-white p-6 shadow-soft">
+          <h2 className="mb-3 font-serif text-lg font-bold text-[#2B1A24]">Delivery Address</h2>
+          <p className="text-sm font-bold text-[#2B1A24]">{order.address.name}</p>
+          <p className="mt-1 text-xs text-[#6B5558]">{order.address.phone}</p>
+          <p className="mt-1 text-xs text-[#6B5558]">
+            {order.address.address}, {order.address.district}
+          </p>
+        </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#FAD4DD] bg-white p-3 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.05)] md:hidden">
+      {/* mobile action bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#FAD4DD] bg-white p-3 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.05)] md:hidden">
         <div className="flex gap-2">
-          <button onClick={handleDownloadInvoice} disabled={downloading} className="flex h-12 w-1/3 items-center justify-center gap-2 rounded-xl border-2 border-[#FAD4DD] bg-white text-sm font-bold text-[#2B1A24]">
+          <button
+            onClick={handleDownloadInvoice}
+            disabled={downloading}
+            className="flex h-12 w-1/3 items-center justify-center gap-2 rounded-xl border-2 border-[#FAD4DD] bg-white text-sm font-bold text-[#2B1A24]"
+          >
             📄 Invoice
           </button>
-          <button onClick={() => router.push("/orders")} className="flex h-12 flex-1 items-center justify-center rounded-xl bg-gradient-to-r from-[#E8546B] to-[#FF8B9A] text-sm font-bold text-white shadow-md active:scale-[0.98]">
+          <button
+            onClick={() => router.push("/orders")}
+            className="flex h-12 flex-1 items-center justify-center rounded-xl bg-gradient-to-r from-[#E8546B] to-[#FF8B9A] text-sm font-bold text-white shadow-md active:scale-[0.98]"
+          >
             Back to Orders
           </button>
         </div>
       </div>
 
       {fullscreenImage && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm animate-fade-in" onClick={() => setFullscreenImage(null)}>
-          <button className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm animate-fade-in"
+          onClick={() => setFullscreenImage(null)}
+        >
+          <button className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
-          <img src={fullscreenImage} alt="" className="max-h-[85vh] max-w-[90vw] object-contain rounded-xl" onClick={(e) => e.stopPropagation()} />
+          <img
+            src={fullscreenImage}
+            alt=""
+            className="max-h-[85vh] max-w-[90vw] rounded-xl object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </div>

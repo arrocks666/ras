@@ -419,7 +419,8 @@ export default function ImportProductsPage() {
                   <div className="border-t border-[#FAD4DD] p-3 bg-white">
                     <p className="text-xs text-gray-600 mb-2"><strong>ID:</strong> {p.id}</p>
                     <p className="text-xs text-gray-600 mb-2"><strong>Supplier:</strong> {p.supplierName}</p>
-                    <p className="text-xs text-gray-600 mb-2"><strong>Category:</strong> {p.categoryId} / {p.subcategoryId}</p>
+                    <p className="text-xs text-gray-600 mb-2"><strong>Category:</strong> {p.categoryId} / {(p as any).subcategoryId}</p>
+
 
                     {p.colors && p.colors.length > 0 && (
                       <div className="mb-2">

@@ -95,11 +95,12 @@ export default function Footer() {
                 )}
                 <div className="flex flex-col leading-none">
                   <span className="font-serif text-lg font-bold text-[#E8546B]">
-                    {(settings.storeName || "Ratry's").split(" ")[0]}
+                    RATRI&rsquo;S
                   </span>
                   <span className="text-[9px] font-bold tracking-[0.2em] text-[#2B1A24] uppercase">
-                    {(settings.storeName || "Artistry Shop").split(" ").slice(1).join(" ")}
+                    Artistry Shop
                   </span>
+
                 </div>
               </Link>
               <p className="text-sm text-[#6B5558] leading-relaxed mb-4">
@@ -164,8 +165,13 @@ export default function Footer() {
           <div className="mt-12 border-t border-[#FAD4DD] pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-xs font-bold text-[#6B5558] uppercase tracking-wider">We Accept:</span>
-              <img src="https://i.ibb.co/vYyLhZ2/bkash.png" alt="bKash" className="h-8 w-auto object-contain" />
-              <img src="https://i.ibb.co/3WpQgZm/nagad.png" alt="Nagad" className="h-8 w-auto object-contain" />
+              <span className="flex h-8 items-center rounded-lg bg-[#E2136E] px-3 text-xs font-extrabold tracking-tight text-white shadow-sm">
+                bKash
+              </span>
+              <span className="flex h-8 items-center rounded-lg bg-gradient-to-r from-[#F7941D] to-[#EE1C25] px-3 text-xs font-extrabold tracking-tight text-white shadow-sm">
+                Nagad
+              </span>
+
               <div className="flex items-center gap-1.5 rounded-lg border border-[#FAD4DD] bg-white px-3 py-1.5">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="#1A4F8A"><path d="M2 10h20v2H2zM2 14h20v2H2zM4 6h16v2H4zM12 2L2 6v2h20V6L12 2zM4 18h4v2H4zM10 18h4v2h-4zM16 18h4v2h-4z"/></svg>
                 <span className="text-xs font-bold text-[#1A4F8A]">Bank</span>

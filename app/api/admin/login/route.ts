@@ -2,14 +2,12 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 
 const COOKIE_NAME = "ras_admin_session";
-const SESSION_MAX_AGE = 60 * 60 * 24; // 24 hours
+const SESSION_MAX_AGE = 60 * 60 * 24;
 
-// Get secret from env (fallback for local testing)
 const SECRET = process.env.ADMIN_SESSION_SECRET || "fallback-secret-change-me";
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
 
-// Generate a signed session token
 function createSessionToken() {
   const payload = JSON.stringify({
     user: ADMIN_USERNAME,
@@ -17,12 +15,14 @@ function createSessionToken() {
     nonce: crypto.randomBytes(16).toString("hex"),
   });
 
+  // sign the SAME string the proxy verifies (base64url payload)
+  const payloadB64 = Buffer.from(payload).toString("base64url");
   const signature = crypto
     .createHmac("sha256", SECRET)
-    .update(payload)
-    .digest("hex");
+    .update(payloadB64)
+    .digest("base64url");
 
-  return `${Buffer.from(payload).toString("base64url")}.${signature}`;
+  return `${payloadB64}.${signature}`;
 }
 
 export async function POST(req: Request) {
@@ -30,15 +30,12 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { username, password } = body;
 
-    // Check credentials
     if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
       return NextResponse.json({ error: "Invalid username or password" }, { status: 401 });
     }
 
-    // Create signed cookie
     const token = createSessionToken();
 
-    // Set the cookie in the response
     const response = NextResponse.json({ success: true });
     response.cookies.set({
       name: COOKIE_NAME,

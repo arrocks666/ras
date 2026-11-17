@@ -403,7 +403,7 @@ export default function NewAdminOrderPage() {
         </form>
       </div>
 
-      <ImageSearchModal open={imageSearchOpen} onClose={() => setImageSearchOpen(false)} onJobStarted={handleJobStarted} />
+      <ImageSearchModal isOpen={imageSearchOpen} onClose={() => setImageSearchOpen(false)} />
     </div>
   );
 }

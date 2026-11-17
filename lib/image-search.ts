@@ -187,9 +187,9 @@ function parseWeightFromSpecs(specs: { name: string; value: string }[] | undefin
 }
 
 export function mergeToLive(pizani: PizaniProduct, parsebird: ParsebirdListing | null): LiveProduct {
-  const variants: LiveProductVariant[] = (pizani.variants ?? []).map((v) => ({
-    colorId: v.colorId,
-    size: v.size,
+    const variants: LiveProductVariant[] = (pizani.variants ?? []).map((v) => ({
+    colorId: v.colorId ?? "",
+    size: v.size ?? "",
     priceCny: Number(v.priceCny) || undefined,
     price: Number(v.price) || undefined,
     stock: v.stock,
