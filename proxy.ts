@@ -5,7 +5,11 @@ const ADMIN_PATH = "/control-room";
 const COOKIE_NAME = "ras_admin_session";
 const SECRET = process.env.ADMIN_SESSION_SECRET || "fallback-secret-change-me";
 
-export function proxy(request: NextRequest) {
+export const config = {
+  matcher: ["/control-room/:path*"],
+};
+
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Only guard the admin routes
@@ -25,24 +29,39 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(`${ADMIN_PATH}/login`, request.url));
   }
 
-  // Verify the token signature (basic check — full HMAC verify requires Edge runtime crypto)
-  // For now: if the token has the correct format (payload.signature), let it through
-  // The server-side API will do the real validation
   try {
-    const [payload, signature] = token.split(".");
-    if (!payload || !signature) throw new Error("Invalid token");
+    const [payloadB64, signature] = token.split(".");
+    if (!payloadB64 || !signature) throw new Error("Invalid token format");
 
-    const decoded = JSON.parse(Buffer.from(payload, "base64url").toString());
-    if (!decoded.exp || Date.now() > decoded.exp) {
+    // ✅ FIX: Verify the HMAC signature using Edge-compatible Web Crypto API
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(SECRET),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["verify"]
+    );
+    
+    const signatureBuffer = Uint8Array.from(atob(signature), c => c.charCodeAt(0));
+    const isValid = await crypto.subtle.verify(
+      "HMAC",
+      key,
+      signatureBuffer,
+      encoder.encode(payloadB64)
+    );
+
+    if (!isValid) throw new Error("Invalid signature");
+
+    // Decode payload to check expiry
+    const payload = JSON.parse(atob(payloadB64));
+    if (!payload.exp || Date.now() > payload.exp) {
       return NextResponse.redirect(new URL(`${ADMIN_PATH}/login`, request.url));
     }
-  } catch {
+  } catch (err) {
+    console.error("Auth check failed:", err);
     return NextResponse.redirect(new URL(`${ADMIN_PATH}/login`, request.url));
   }
 
   return NextResponse.next();
 }
-
-export const config = {
-  matcher: ["/control-room/:path*"],
-};

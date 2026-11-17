@@ -7,25 +7,20 @@ export default function HeroBanner() {
 
   return (
     <section className="relative w-full bg-[#FFF6F6]">
-      {/* 
-        The image will scale to fit the width of the screen. 
-        Using `h-auto` prevents it from squishing. 
-      */}
       <img 
         src="/banner.png" 
         alt="Welcome to Ratry's Artistry Shop" 
-        className="w-full h-auto block object-cover"
+        className="w-full h-auto object-cover block" 
       />
-
-      {/* 
-        Invisible clickable button over "Shop Now" 
-        Adjusted percentages so it works on mobile and desktop 
-      */}
-      <button
-        onClick={() => router.push("/search")}
-        className="absolute left-[8%] bottom-[15%] w-[120px] md:w-[150px] h-[40px] md:h-[50px] bg-transparent cursor-pointer rounded-full"
-        aria-label="Shop Now"
-      />
+      
+      {/* Slider Dots */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-10">
+        <div className="h-1.5 w-1.5 rounded-full bg-[#E8546B]" />
+        <div className="h-1.5 w-1.5 rounded-full bg-white/60" />
+        <div className="h-1.5 w-1.5 rounded-full bg-white/60" />
+        <div className="h-1.5 w-1.5 rounded-full bg-white/60" />
+        <div className="h-1.5 w-1.5 rounded-full bg-white/60" />
+      </div>
     </section>
   );
 }

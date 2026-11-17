@@ -18,7 +18,8 @@ export default function ContactPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // For now, opens WhatsApp with the message
-    const phone = settings.whatsappChatNumber || "8801700000000";
+    // Find line ~20:
+    const phone = settings.whatsappChatNumber || "8801689768307"; // ✅ FIXED
     const text = `Hi! My name is ${form.name}. ${form.message} (Reply to: ${form.email})`;
     window.open(`https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`, "_blank");
     setSent(true);

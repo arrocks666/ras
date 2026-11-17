@@ -1,19 +1,7 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  ReactNode,
-} from "react";
-import {
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut,
-  User,
-} from "firebase/auth";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, User } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
 
@@ -35,12 +23,21 @@ type AuthContextType = {
   profile: UserProfile | null;
   loading: boolean;
   login: (phone: string, password: string) => Promise<void>;
-  signup: (phone: string, password: string, name?: string) => Promise<void>;
+  signup: (phone: string, password: string, details: { name: string; email: string; address: string; district: string }) => Promise<void>;
   logout: () => Promise<void>;
-  updateProfile: (data: Partial<UserProfile>) => Promise<void>; // ✅ NEW
+  updateProfile: (data: Partial<UserProfile>) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
+
+// ✅ FIX #6: Helper to strip undefined values so Firestore doesn't crash
+function stripUndefined<T extends Record<string, any>>(obj: T): T {
+  const out: Record<string, any> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v !== undefined) out[k] = v;
+  }
+  return out as T;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -73,26 +70,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signInWithEmailAndPassword(auth, email, password);
   };
 
-  const signup = async (phone: string, password: string, name?: string) => {
+  const signup = async (
+    phone: string, 
+    password: string, 
+    details: { name: string; email: string; address: string; district: string }
+  ) => {
     const normalized = phone.replace(/\D/g, "");
-    const email = `${normalized}@ratrysartistry.app`;
-    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    const fakeAuthEmail = `${normalized}@ratrysartistry.app`;
+    const cred = await createUserWithEmailAndPassword(auth, fakeAuthEmail, password);
 
-    // Save user document
-    await setDoc(doc(db, "users", cred.user.uid), {
+    const newProfile: UserProfile = {
       phone: normalized,
-      email, // Store the fake email as default
-      name: name || "",
-      savedAddress: {},
-    });
+      email: details.email,
+      name: details.name,
+      savedAddress: {
+        name: details.name,
+        phone: normalized,
+        address: details.address,
+        district: details.district,
+        email: details.email,
+      }
+    };
 
-    // Update profile state
-    setProfile({
-      phone: normalized,
-      email,
-      name: name || "",
-      savedAddress: {},
-    });
+    await setDoc(doc(db, "users", cred.user.uid), newProfile);
+    setProfile(newProfile);
   };
 
   const logout = async () => {
@@ -101,14 +102,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
   };
 
-  // ✅ NEW: Update Profile Function
   const updateProfile = async (data: Partial<UserProfile>) => {
     if (!user) throw new Error("Not logged in");
-    
-    // Save to Firestore with merge: true so we don't overwrite the whole doc
-    await setDoc(doc(db, "users", user.uid), data, { merge: true });
-    
-    // Instantly update the local state so the UI reflects the changes
+    // ✅ FIX #6: Using stripUndefined here
+    await setDoc(doc(db, "users", user.uid), stripUndefined(data), { merge: true });
     setProfile((prev) => prev ? { ...prev, ...data } : null);
   };
 

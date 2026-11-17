@@ -8,21 +8,29 @@ import { useAuth } from "@/lib/AuthContext";
 export default function SignupPage() {
   const router = useRouter();
   const { signup } = useAuth();
-  
+
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [district, setDistrict] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); // Stop the page from reloading
+    e.preventDefault();
     setError(null);
 
+    // Strict Validation
+    if (!name.trim() || !email.trim() || !phone.trim() || !address.trim() || !district.trim()) {
+      setError("Please fill in all fields, including your full address.");
+      return;
+    }
     if (password !== confirmPassword) {
       setError("Passwords do not match. Please try again.");
-      return; // Stop here. The user can just click and fix the box.
+      return;
     }
     if (password.length < 6) {
       setError("Password must be at least 6 characters.");
@@ -35,8 +43,13 @@ export default function SignupPage() {
 
     setLoading(true);
     try {
-      // Ensure the name is trimmed before sending
-      await signup(phone.trim(), password, name.trim());
+      // We pass all details to the AuthContext signup function
+      await signup(phone.trim(), password, {
+        name: name.trim(),
+        email: email.trim(),
+        address: address.trim(),
+        district: district.trim()
+      });
       router.push("/");
     } catch (err: any) {
       console.error(err);
@@ -55,11 +68,8 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-[#FFF6F6] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
-        
         <div className="text-center mb-8">
-          <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#E8546B] to-[#FF8B9A] text-2xl font-bold text-white shadow-lg mb-4">
-            R
-          </div>
+          <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#E8546B] to-[#FF8B9A] text-2xl font-bold text-white shadow-lg mb-4">R</div>
           <h1 className="font-serif text-3xl font-bold text-[#2B1A24]">Create Account</h1>
           <p className="mt-2 text-sm text-[#6B5558]">Join us and start shopping premium products.</p>
         </div>
@@ -67,53 +77,38 @@ export default function SignupPage() {
         <div className="rounded-3xl border border-[#FAD4DD] bg-white p-6 md:p-8 shadow-soft">
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <div>
-              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-[#6B5558]">Full Name</label>
-              <input
-                type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Anik Rahman"
-                className="w-full rounded-xl border border-[#FAD4DD] bg-[#FFF6F6] px-4 py-3 text-sm font-medium focus:border-[#E8546B] focus:outline-none focus:ring-2 focus:ring-[#E8546B]/20 transition-all"
-              />
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-[#6B5558]">Full Name *</label>
+              <input type="text" required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Anik Rahman" className="w-full rounded-xl border border-[#FAD4DD] bg-[#FFF6F6] px-4 py-3 text-sm font-medium focus:border-[#E8546B] focus:outline-none focus:ring-2 focus:ring-[#E8546B]/20 transition-all" />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-[#6B5558]">Phone Number</label>
-              <input
-                type="tel"
-                required
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="01XXXXXXXXX"
-                className="w-full rounded-xl border border-[#FAD4DD] bg-[#FFF6F6] px-4 py-3 text-sm font-medium focus:border-[#E8546B] focus:outline-none focus:ring-2 focus:ring-[#E8546B]/20 transition-all"
-              />
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-[#6B5558]">Email Address *</label>
+              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="anik@example.com" className="w-full rounded-xl border border-[#FAD4DD] bg-[#FFF6F6] px-4 py-3 text-sm font-medium focus:border-[#E8546B] focus:outline-none focus:ring-2 focus:ring-[#E8546B]/20 transition-all" />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-[#6B5558]">Password</label>
-              <input
-                type="password"
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Min 6 characters"
-                className="w-full rounded-xl border border-[#FAD4DD] bg-[#FFF6F6] px-4 py-3 text-sm font-medium focus:border-[#E8546B] focus:outline-none focus:ring-2 focus:ring-[#E8546B]/20 transition-all"
-              />
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-[#6B5558]">Phone Number *</label>
+              <input type="tel" required value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01XXXXXXXXX" className="w-full rounded-xl border border-[#FAD4DD] bg-[#FFF6F6] px-4 py-3 text-sm font-medium focus:border-[#E8546B] focus:outline-none focus:ring-2 focus:ring-[#E8546B]/20 transition-all" />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-[#6B5558]">Confirm Password</label>
-              <input
-                type="password"
-                required
-                minLength={6}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Repeat your password"
-                className="w-full rounded-xl border border-[#FAD4DD] bg-[#FFF6F6] px-4 py-3 text-sm font-medium focus:border-[#E8546B] focus:outline-none focus:ring-2 focus:ring-[#E8546B]/20 transition-all"
-              />
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-[#6B5558]">Full Address *</label>
+              <input type="text" required value={address} onChange={(e) => setAddress(e.target.value)} placeholder="House, Road, Area" className="w-full rounded-xl border border-[#FAD4DD] bg-[#FFF6F6] px-4 py-3 text-sm font-medium focus:border-[#E8546B] focus:outline-none focus:ring-2 focus:ring-[#E8546B]/20 transition-all" />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-[#6B5558]">District *</label>
+              <input type="text" required value={district} onChange={(e) => setDistrict(e.target.value)} placeholder="e.g. Dhaka" className="w-full rounded-xl border border-[#FAD4DD] bg-[#FFF6F6] px-4 py-3 text-sm font-medium focus:border-[#E8546B] focus:outline-none focus:ring-2 focus:ring-[#E8546B]/20 transition-all" />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-[#6B5558]">Password *</label>
+              <input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min 6 characters" className="w-full rounded-xl border border-[#FAD4DD] bg-[#FFF6F6] px-4 py-3 text-sm font-medium focus:border-[#E8546B] focus:outline-none focus:ring-2 focus:ring-[#E8546B]/20 transition-all" />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-[#6B5558]">Confirm Password *</label>
+              <input type="password" required minLength={6} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Repeat your password" className="w-full rounded-xl border border-[#FAD4DD] bg-[#FFF6F6] px-4 py-3 text-sm font-medium focus:border-[#E8546B] focus:outline-none focus:ring-2 focus:ring-[#E8546B]/20 transition-all" />
             </div>
 
             {error && (
@@ -122,21 +117,14 @@ export default function SignupPage() {
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-gradient-to-r from-[#E8546B] to-[#FF8B9A] py-3.5 text-sm font-bold text-white shadow-md transition-all hover:scale-[1.01] disabled:opacity-50"
-            >
+            <button type="submit" disabled={loading} className="w-full rounded-xl bg-gradient-to-r from-[#E8546B] to-[#FF8B9A] py-3.5 text-sm font-bold text-white shadow-md transition-all hover:scale-[1.01] disabled:opacity-50">
               {loading ? "Creating account..." : "Create Account"}
             </button>
           </form>
         </div>
 
         <p className="mt-6 text-center text-sm text-[#6B5558]">
-          Already have an account?{" "}
-          <Link href="/login" className="font-bold text-[#E8546B] hover:underline">
-            Login
-          </Link>
+          Already have an account? <Link href="/login" className="font-bold text-[#E8546B] hover:underline">Login</Link>
         </p>
       </div>
     </div>

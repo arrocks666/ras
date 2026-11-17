@@ -11,7 +11,7 @@ const WhatsAppContext = createContext<WhatsAppContextType | undefined>(undefined
 
 export function WhatsAppProvider({ children }: { children: ReactNode }) {
   const openChat = () => {
-    window.open("https://wa.me/8801700000000", "_blank"); // Change this number later
+    window.open("https://wa.me/8801689768307", "_blank"); // ✅ FIXED
   };
 
   return (

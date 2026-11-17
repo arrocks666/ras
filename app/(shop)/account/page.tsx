@@ -20,13 +20,15 @@ import {
 } from "@/lib/coupons";
 import { getUserOrders } from "@/lib/firestoreOrders";
 import type { Order } from "@/lib/OrderContext";
+import { useWishlist } from "@/lib/WishlistContext"; // ✅ FIX #5: Imported
 
 export default function AccountPage() {
   const router = useRouter();
   const { user, profile, loading, logout, updateProfile } = useAuth();
+  const wishlist = useWishlist(); // ✅ FIX #5: Hook initialized
 
   const [openSection, setOpenSection] = useState<string | null>(null);
-  
+
   // Profile Edit State
   const [editingProfile, setEditingProfile] = useState(false);
   const [editName, setEditName] = useState("");
@@ -54,8 +56,7 @@ export default function AccountPage() {
     if (!user) return;
     getSavedPayments(user.uid).then(setPayments);
     getSavedAddress(user.uid).then(setAddress);
-    
-    // Pre-fill the profile edit inputs
+
     setEditName(profile?.name || "");
     setEditPhone(profile?.phone || "");
     setEditEmail(profile?.email?.endsWith("@ratrysartistry.app") ? "" : (profile?.email || ""));
@@ -140,8 +141,6 @@ export default function AccountPage() {
 
     return (
       <div className="min-h-screen bg-[#FFF6F6] pb-24 md:pb-8">
-        
-        {/* HEADER */}
         <div className="sticky top-[56px] z-40 border-b border-[#FAD4DD] bg-white/95 backdrop-blur-md shadow-sm md:top-[60px]">
           <div className="mx-auto flex max-w-[1400px] items-center gap-3 px-4 py-3">
             <button onClick={() => router.push("/")} className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FFF6F6] text-[#2B1A24] hover:bg-[#FAD4DD] transition-colors">
@@ -152,11 +151,9 @@ export default function AccountPage() {
         </div>
 
         <div className="mx-auto max-w-3xl px-4 py-5 md:py-8 space-y-5 animate-fade-in">
-          
           {/* PREMIUM PROFILE CARD */}
           <div className="relative overflow-hidden rounded-3xl border border-[#FAD4DD] bg-white shadow-soft">
             <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-r from-[#E8546B] to-[#FF8B9A]" />
-            
             <div className="relative z-10 px-6 pt-8 pb-6">
               <div className="flex items-end justify-between gap-4">
                 <div className="flex items-end gap-4">
@@ -177,7 +174,6 @@ export default function AccountPage() {
                 </button>
               </div>
 
-              {/* PROFILE EDIT FORM */}
               {editingProfile && (
                 <div className="mt-6 rounded-2xl border border-[#FAD4DD] bg-[#FFF6F6] p-4 animate-fade-down">
                   <div className="space-y-3">
@@ -203,7 +199,8 @@ export default function AccountPage() {
               <span className="text-[10px] font-bold uppercase tracking-wider text-[#6B5558]">Orders</span>
             </div>
             <div className="flex flex-col items-center justify-center rounded-2xl border border-[#FAD4DD] bg-white p-4 shadow-sm">
-              <span className="text-2xl font-bold text-[#E8546B]">0</span>
+              {/* ✅ FIX #5: Replaced hardcoded 0 with actual wishlist size */}
+              <span className="text-2xl font-bold text-[#E8546B]">{wishlist.items.size}</span>
               <span className="text-[10px] font-bold uppercase tracking-wider text-[#6B5558]">Wishlist</span>
             </div>
             <div className="flex flex-col items-center justify-center rounded-2xl border border-[#FAD4DD] bg-white p-4 shadow-sm">
@@ -228,7 +225,6 @@ export default function AccountPage() {
 
           {/* ACTION LIST */}
           <div className="space-y-3">
-            
             <Link href="/orders" className="flex items-center gap-4 rounded-2xl border border-[#FAD4DD] bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-xl">📦</div>
               <span className="flex-1 text-sm font-bold text-[#2B1A24]">My Orders</span>
@@ -241,7 +237,6 @@ export default function AccountPage() {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#A88F92]"><polyline points="9 18 15 12 9 6" /></svg>
             </Link>
 
-            {/* Address Accordion */}
             <div className="rounded-2xl border border-[#FAD4DD] bg-white shadow-sm overflow-hidden">
               <button onClick={() => toggleSection("My Addresses")} className="flex w-full items-center gap-4 p-4 hover:bg-[#FFF6F6] transition-colors">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-50 text-xl">📍</div>
@@ -270,7 +265,6 @@ export default function AccountPage() {
               )}
             </div>
 
-            {/* Payments Accordion */}
             <div className="rounded-2xl border border-[#FAD4DD] bg-white shadow-sm overflow-hidden">
               <button onClick={() => toggleSection("Payment Methods")} className="flex w-full items-center gap-4 p-4 hover:bg-[#FFF6F6] transition-colors">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-xl">💳</div>
@@ -294,7 +288,6 @@ export default function AccountPage() {
               )}
             </div>
 
-            {/* Coupons Accordion */}
             <div className="rounded-2xl border border-[#FAD4DD] bg-white shadow-sm overflow-hidden">
               <button onClick={() => toggleSection("Coupons & Offers")} className="flex w-full items-center gap-4 p-4 hover:bg-[#FFF6F6] transition-colors">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-50 text-xl">🎟️</div>
@@ -310,7 +303,6 @@ export default function AccountPage() {
                         <div key={c.code} className="flex items-center justify-between rounded-xl border border-[#E8546B]/30 bg-white px-3 py-3 shadow-sm">
                           <span className="font-mono font-bold text-[#E8546B]">{c.code}</span>
                           <span className="font-bold text-[#2B1A24]">
-                            {/* ✅ FIXED: Show % or ৳ based on coupon type */}
                             {c.type === "percentage" ? `${c.amount}% OFF` : `${formatBDT(c.amount)} OFF`}
                           </span>
                           <span className="text-[10px] font-medium text-[#6B5558]">Exp {new Date(c.expiresAt).toLocaleDateString("en-GB")}</span>
@@ -340,7 +332,6 @@ export default function AccountPage() {
           <p className="text-center text-[10px] font-medium text-[#A88F92]">Ratry's Artistry Shop v0.1.0 • Made for Bangladesh 🇧🇩</p>
         </div>
 
-        {/* MOBILE STICKY LOGOUT */}
         <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#FAD4DD] bg-white p-3 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.05)] md:hidden">
           <button onClick={handleLogout} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-[#E8546B] bg-[#FFF6F6] text-sm font-bold text-[#E8546B] active:scale-[0.98]">
             Logout
@@ -368,7 +359,7 @@ export default function AccountPage() {
         </div>
         <h2 className="text-xl font-bold text-[#2B1A24]">Welcome, Guest</h2>
         <p className="mt-2 text-sm text-[#6B5558]">Login to access your orders, wishlist, and saved details.</p>
-        
+
         <div className="mt-8 grid grid-cols-2 gap-3 max-w-sm mx-auto">
           <Link href="/login" className="rounded-xl bg-gradient-to-r from-[#E8546B] to-[#FF8B9A] py-3.5 text-center text-sm font-bold text-white shadow-md">Login</Link>
           <Link href="/signup" className="rounded-xl border-2 border-[#E8546B] bg-white py-3.5 text-center text-sm font-bold text-[#E8546B]">Sign Up</Link>

@@ -9,7 +9,7 @@ import { CartProvider } from "@/lib/CartContext";
 import { OrderProvider } from "@/lib/OrderContext";
 import { WhatsAppProvider } from "@/lib/WhatsAppContext";
 import { LiveProductProvider } from "@/lib/LiveProductContext";
-import AppShell from "@/components/AppShell"; // ✅ Import AppShell
+import AppShell from "@/components/AppShell";
 
 const poppins = Poppins({ weight: ["300", "400", "500", "600", "700"], variable: "--font-poppins", subsets: ["latin"], display: "swap" });
 const playfair = Playfair_Display({ variable: "--font-playfair", subsets: ["latin"], display: "swap" });
@@ -28,8 +28,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${poppins.variable} ${playfair.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-[#FFF6F6] text-[#2B1A24]">
+    <html lang="en" className={`${poppins.variable} ${playfair.variable} h-full antialiased bg-[#1A1A1A]`}>
+      <body className="min-h-full flex flex-col text-[#2B1A24] items-center">
         <AuthProvider>
           <ProductsProvider>
             <WishlistProvider>
@@ -38,10 +38,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <WhatsAppProvider>
                     <LiveProductProvider>
                       
-                      {/* ✅ Use AppShell to handle Header/Footer conditionally */}
-                      <AppShell>
-                        {children}
-                      </AppShell>
+                      {/* ✅ HARD LOCK: Max width, shadow, and border to simulate a phone screen */}
+                      <div className="w-full max-w-[430px] mx-auto bg-[#FFF6F6] min-h-screen shadow-2xl relative overflow-x-hidden lg:max-w-none lg:shadow-none">
+                        <AppShell>
+                          {children}
+                        </AppShell>
+                      </div>
 
                     </LiveProductProvider>
                   </WhatsAppProvider>
