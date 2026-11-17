@@ -10,14 +10,13 @@ import type { Product } from "@/lib/ProductsContext";
 export default function MobileProductCard({ product }: { product: Product }) {
   const cart = useCart();
   const wishlist = useWishlist();
-  const [imgFailed, setImgFailed] = useState(false);
+  const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
 
   const saved = wishlist.has(product.id);
   const price = product.price ?? 0;
   const oldPrice = product.oldPrice ?? 0;
   const discount =
     oldPrice > price && oldPrice > 0 ? Math.round(((oldPrice - price) / oldPrice) * 100) : 0;
-  const showImage = !!product.image && !imgFailed;
 
   const addToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -37,19 +36,26 @@ export default function MobileProductCard({ product }: { product: Product }) {
       className="group flex flex-col overflow-hidden rounded-[18px] bg-white shadow-[0_6px_18px_-10px_rgba(228,33,111,0.45)] transition-transform active:scale-[0.99]"
     >
       <div className="relative aspect-[1/0.94] w-full overflow-hidden bg-[#F7F1F4]">
-        {showImage ? (
+        {/* placeholder while the picture downloads */}
+        {status === "loading" && <div className="skeleton-shimmer absolute inset-0" />}
+
+        {product.image && status !== "error" ? (
           <img
             src={product.image}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover"
-            loading="lazy"
-            onError={() => setImgFailed(true)}
+            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
+              status === "loaded" ? "opacity-100" : "opacity-0"
+            }`}
+            onLoad={() => setStatus("loaded")}
+            onError={() => setStatus("error")}
           />
         ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-[#FFF0F5] to-[#FDE4EC]">
-            <span className="text-2xl opacity-60">🖼️</span>
-            <span className="text-[9px] font-bold uppercase tracking-wider text-[#C9A3B3]">No photo</span>
-          </div>
+          status === "error" && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-[#FFF0F5] to-[#FDE4EC]">
+              <span className="text-2xl opacity-60">🖼️</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider text-[#C9A3B3]">No photo</span>
+            </div>
+          )
         )}
 
         {discount > 0 && (
@@ -63,16 +69,7 @@ export default function MobileProductCard({ product }: { product: Product }) {
           aria-label={saved ? "Remove from wishlist" : "Add to wishlist"}
           className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur transition-transform active:scale-90"
         >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill={saved ? "#E4216F" : "none"}
-            stroke="#E4216F"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill={saved ? "#E4216F" : "none"} stroke="#E4216F" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
           </svg>
         </button>
@@ -98,9 +95,7 @@ export default function MobileProductCard({ product }: { product: Product }) {
             </span>
           </div>
         ) : (
-          <div className="mt-1.5 text-[10px] font-semibold leading-none text-[#B98BA0]">
-            New arrival
-          </div>
+          <div className="mt-1.5 text-[10px] font-semibold leading-none text-[#B98BA0]">New arrival</div>
         )}
 
         <div className="mt-auto flex items-end justify-between gap-1 pt-2">
