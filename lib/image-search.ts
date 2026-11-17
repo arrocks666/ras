@@ -11,23 +11,49 @@ import type { LiveProduct, LiveProductVariant } from "./liveProduct";
 import { saveLiveProduct, saveSearchCache, getSearchCache, loadCachedProducts } from "./firestoreLiveProducts";
 
 const APIFY_TOKEN = process.env.APIFY_TOKEN;
-const APIFY_IMAGE_SEARCH_ACTOR_ID = process.env.APIFY_IMAGE_SEARCH_ACTOR_ID;
-if (!APIFY_TOKEN) throw new Error("Missing APIFY_TOKEN");
-if (!APIFY_IMAGE_SEARCH_ACTOR_ID) throw new Error("Missing APIFY_IMAGE_SEARCH_ACTOR_ID");
+if (!APIFY_TOKEN) {
+  console.error("🚨 [image-search] APIFY_TOKEN is missing from .env.local");
+  throw new Error("Missing APIFY_TOKEN");
+}
 
 const PRODUCTS_WANTED = 3;
 const ASK_FOR = 5;
 const MIN_PRICE_BDT = 20;
 
 type RawListing = {
-  offerId?: string; productId?: string; title?: string; price?: number;
-  priceYuan?: number; imageUrl?: string; detailUrl?: string; productUrl?: string;
-  supplierName?: string; supplier?: { name?: string }; [key: string]: unknown;
+  offerId?: string;
+  productId?: string;
+  title?: string;
+  titleEn?: string;
+  price?: number;
+  priceUsd?: number;
+  priceYuan?: number;
+  image?: string;
+  imageUrl?: string;
+  detailUrl?: string;
+  productUrl?: string;
+  url?: string;
+  supplierName?: string;
+  supplier?: { name?: string };
+  [key: string]: unknown;
 };
-type RawImageSearchResult = {
-  results?: RawListing[]; matches?: RawListing[]; listings?: RawListing[];
-  error?: string | null; [key: string]: unknown;
-};
+
+function deepClean(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map((v) => deepClean(v)).filter((v) => v !== undefined);
+  }
+  if (obj !== null && typeof obj === "object") {
+    const newObj: any = {};
+    for (const key in obj) {
+      const cleaned = deepClean(obj[key]);
+      if (cleaned !== undefined) {
+        newObj[key] = cleaned;
+      }
+    }
+    return newObj;
+  }
+  return obj;
+}
 
 function toRawBase64(input: string): string {
   if (input.includes(",")) return input.slice(input.indexOf(",") + 1);
@@ -42,25 +68,6 @@ function hashImageBase64(base64: string): string {
   return `img_${h.toString(36)}_${base64.length}`;
 }
 
-function extractListings(raw: RawImageSearchResult): RawListing[] {
-  if (Array.isArray(raw.results)) return raw.results;
-  if (Array.isArray(raw.matches)) return raw.matches;
-  if (Array.isArray(raw.listings)) return raw.listings;
-  for (const key of Object.keys(raw)) {
-    const value = raw[key];
-    if (value && typeof value === "object" && !Array.isArray(value)) {
-      const nested = value as Record<string, unknown>;
-      if (Array.isArray(nested.results)) return nested.results as RawListing[];
-      if (Array.isArray(nested.matches)) return nested.matches as RawListing[];
-      if (Array.isArray(nested.listings)) return nested.listings as RawListing[];
-      if (Array.isArray(nested.items)) return nested.items as RawListing[];
-      if (Array.isArray(nested.products)) return nested.products as RawListing[];
-      if (Array.isArray(nested.data)) return nested.data as RawListing[];
-    }
-  }
-  return [];
-}
-
 async function findListingsByBase64(dataUrlOrBase64: string): Promise<RawListing[]> {
   const rawBase64 = toRawBase64(dataUrlOrBase64);
   if (!rawBase64) throw new Error("Invalid image data");
@@ -73,41 +80,88 @@ async function findListingsByBase64(dataUrlOrBase64: string): Promise<RawListing
     imgbbForm.append("image", blob, "search.jpg");
     const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=${process.env.IMGBB_API_KEY}`, { method: "POST", body: imgbbForm });
     const imgbbData = await imgbbRes.json();
-    if (imgbbData.success) imageUrl = imgbbData.data.url;
-  } catch (err) { console.warn(`[image-search] ImgBB failed`, err); }
-
-  const input: Record<string, unknown> = imageUrl
-    ? { imageUrls: [imageUrl], maxImages: 1, maxResultsPerImage: ASK_FOR }
-    : { imagesBase64: [rawBase64], maxImages: 1, maxResultsPerImage: ASK_FOR };
-
-  const url = `https://api.apify.com/v2/acts/${APIFY_IMAGE_SEARCH_ACTOR_ID}/run-sync-get-dataset-items?token=${APIFY_TOKEN}&timeout=180`;
-  const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) });
-  if (!response.ok) throw new Error(`Actor failed: ${response.status}`);
-  const items = (await response.json()) as RawImageSearchResult[];
-
-  const allListings: RawListing[] = [];
-  for (const item of items) {
-    if (item.error) continue;
-    allListings.push(...extractListings(item));
+    if (imgbbData.success) {
+      imageUrl = imgbbData.data.url;
+    } else {
+      throw new Error("ImgBB upload failed");
+    }
+  } catch (err) {
+    console.warn(`[image-search] ImgBB failed`, err);
   }
-  return allListings;
+
+  if (!imageUrl) throw new Error("Image upload failed - cannot search");
+
+  const input = {
+    imageUrls: [imageUrl],
+    maxResultsPerInput: ASK_FOR,
+  };
+
+  const ACTOR_ID = process.env.APIFY_IMAGE_SEARCH_ACTOR_ID || "blueskyscraper~1688-image-search-scraper";
+
+  const url = `https://api.apify.com/v2/actors/${ACTOR_ID}/run-sync-get-dataset-items?token=${APIFY_TOKEN}&waitForFinish=60`;
+
+  console.log(`[image-search] POST sync actor=${ACTOR_ID}`);
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    console.error(`[image-search] ❌ Apify error ${response.status}: ${text}`);
+    throw new Error(`Image search actor failed (${response.status}): ${text}`);
+  }
+
+  const items = (await response.json()) as RawListing[];
+  console.log(`[image-search] ${items.length} listings received`);
+
+  return Array.isArray(items) ? items : [];
 }
 
 function fallbackToLive(raw: RawListing): LiveProduct | null {
-  const id = String(raw.offerId ?? raw.productId ?? "");
-  if (!id || !raw.title || !raw.imageUrl) return null;
-  const priceCny = typeof raw.price === "number" ? raw.price : typeof raw.priceYuan === "number" ? raw.priceYuan : 0;
-  if (priceCny <= 0) return null;
-  const priceBdt = Math.round(priceCny * 18.5);
+  const idMatch = (raw.url || "").match(/offer\/(\d+)/);
+  const id = idMatch ? idMatch[1] : String(raw.offerId ?? raw.productId ?? "");
+
+  const title = raw.titleEn || raw.title;
+  const image = raw.image || raw.imageUrl;
+
+  if (!id || !title || !image) return null;
+
+  const priceUsd = typeof raw.priceUsd === "number" ? raw.priceUsd : 0;
+  const priceCny = typeof raw.price === "number" ? raw.price : 0;
+
+  let priceBdt = 0;
+  if (priceUsd > 0) priceBdt = Math.round(priceUsd * 120);
+  else if (priceCny > 0) priceBdt = Math.round(priceCny * 18.5);
+
   if (priceBdt < MIN_PRICE_BDT) return null;
+
   return {
-    id: `live-${id}`, title: String(raw.title).slice(0, 120), subtitle: "China",
-    price: priceBdt, oldPrice: Math.round(priceBdt * 1.25), discount: 20, rating: 4.5, reviews: 0,
-    image: String(raw.imageUrl), gallery: [String(raw.imageUrl)], colors: [], sizes: [],
-    inStock: true, stockCount: 999, features: [{ icon: "📍", label: "China" }],
-    description: String(raw.title), sourceUrl: String(raw.detailUrl ?? ""), moq: 1,
-    supplierName: String(raw.supplierName ?? "1688 Supplier"), priceOriginalCny: priceCny,
-    isLive: true, lastRefreshedAt: Date.now(),
+    id: `live-${id}`,
+    title: String(title).slice(0, 120),
+    subtitle: "China",
+    price: priceBdt,
+    priceMax: undefined,
+    oldPrice: Math.round(priceBdt * 1.25),
+    discount: 20,
+    rating: 4.5,
+    reviews: 0,
+    image: String(image),
+    gallery: [String(image)],
+    colors: [],
+    sizes: [],
+    inStock: true,
+    stockCount: 999,
+    features: [{ icon: "📍", label: "China" }],
+    description: String(title),
+    sourceUrl: String(raw.url || raw.detailUrl || ""),
+    moq: 1,
+    supplierName: String(raw.supplierName ?? "1688 Supplier"),
+    priceOriginalCny: priceCny,
+    isLive: true,
+    lastRefreshedAt: Date.now(),
   } as unknown as LiveProduct;
 }
 
@@ -175,7 +229,6 @@ export function mergeToLive(pizani: PizaniProduct, parsebird: ParsebirdListing |
   const maxPrice = variantPrices.length > 0 ? Math.max(...variantPrices) : finalBasePrice;
   const finalPriceMax = maxPrice > finalBasePrice * 1.2 ? maxPrice : undefined;
 
-  // Merge colors (Parsebird first with images, then Pizani)
   const colorMap = new Map<string, { id: string; label: string; hex: string; image?: string }>();
   if (parsebird?.skuColors) {
     for (let i = 0; i < parsebird.skuColors.length; i++) {
@@ -211,9 +264,9 @@ export function mergeToLive(pizani: PizaniProduct, parsebird: ParsebirdListing |
     reviews: pizani.reviews,
     image: pizani.image,
     gallery: pizani.gallery,
-    colors: Array.from(colorMap.values()),
+    colors: Array.from(colorMap.values()) as any,
     sizes: pizani.sizes,
-    variants: variants.length > 0 ? variants : undefined,
+    variants: (variants.length > 0 ? variants : undefined) as any,
     specs: pizani.specs,
     videoUrl: undefined,
     inStock: pizani.inStock,
@@ -236,7 +289,6 @@ export function mergeToLiveForRefresh(pizani: PizaniProduct, parsebird: Parsebir
 }
 
 export async function runImageSearchJob(jobId: string, imageBase64OrUrl: string): Promise<void> {
-  const t0 = Date.now();
   try {
     updateJob(jobId, { status: "searching" });
     const rawBase64 = toRawBase64(imageBase64OrUrl);
@@ -263,7 +315,9 @@ export async function runImageSearchJob(jobId: string, imageBase64OrUrl: string)
     const offerIds: string[] = [];
     const seen = new Set<string>();
     for (const l of listings) {
-      const id = String(l.offerId ?? l.productId ?? "");
+      const idMatch = (l.url || "").match(/offer\/(\d+)/);
+      const id = idMatch ? idMatch[1] : String(l.offerId ?? l.productId ?? "");
+
       if (!/^\d{8,15}$/.test(id) || seen.has(id)) continue;
       seen.add(id);
       offerIds.push(id);
@@ -288,18 +342,25 @@ export async function runImageSearchJob(jobId: string, imageBase64OrUrl: string)
           const live = mergeToLive(detail, parsebirdData);
           pushProduct(jobId, live);
           savedProducts.push(live);
-          await saveLiveProduct(live);
+          await saveLiveProduct(live); // Keep cache save
+          // ❌ REMOVED: await saveProductToStore(live);
           return;
         }
       } catch (err) { console.warn(`[job ${jobId}] ✗ ${offerId} failed:`, err); }
 
-      const raw = listings.find((l) => String(l.offerId ?? l.productId) === offerId);
+      const raw = listings.find((l) => {
+        const idMatch = (l.url || "").match(/offer\/(\d+)/);
+        const id = idMatch ? idMatch[1] : String(l.offerId ?? l.productId);
+        return id === offerId;
+      });
+
       if (raw) {
         const fallback = fallbackToLive(raw);
         if (fallback) {
           pushProduct(jobId, fallback);
           savedProducts.push(fallback);
-          await saveLiveProduct(fallback);
+          await saveLiveProduct(fallback); // Keep cache save
+          // ❌ REMOVED: await saveProductToStore(fallback);
         }
       }
     });

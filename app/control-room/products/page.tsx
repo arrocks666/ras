@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   collection,
@@ -12,56 +12,72 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { formatBDT } from "@/lib/adminOrders";
-import { Product } from "@/lib/ProductsContext";
-import { loadSettings, DEFAULT_SETTINGS, type StoreSettings } from "@/lib/firestoreSettings";
+import { useProducts, Product } from "@/lib/ProductsContext";
 import ImageSearchModal from "@/components/ImageSearchModal";
-import AddProductModal from "@/components/AddProductModal";
-import type { LiveProduct } from "@/lib/liveProduct";
+
+type StatusFilter = "all" | "flash" | "trending" | "out-of-stock";
 
 export default function AdminProductsPage() {
+  const { refresh } = useProducts();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
-  const [settings, setSettings] = useState<StoreSettings>(DEFAULT_SETTINGS);
-  const [recalculating, setRecalculating] = useState(false);
-  const [editProduct, setEditProduct] = useState<Product | null>(null);
-  const [newPrice, setNewPrice] = useState<string>("");
-
-  // Image search state
-  const [imageSearchOpen, setImageSearchOpen] = useState(false);
-  const [imageSearchJobId, setImageSearchJobId] = useState<string | null>(null);
-  const [imageSearchResults, setImageSearchResults] = useState<LiveProduct[]>([]);
-  const [imageSearchLoading, setImageSearchLoading] = useState(false);
-  const [imageSearchError, setImageSearchError] = useState<string | null>(null);
-  const imageSearchPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Add product modal
-  const [addModalOpen, setAddModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<LiveProduct | null>(null);
-  const [previewProduct, setPreviewProduct] = useState<Product | null>(null);
-
-  useEffect(() => {
-    loadSettings().then(setSettings);
-    fetchProducts();
-  }, []);
+  
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const fetchProducts = async () => {
     setLoading(true);
     try {
       const snap = await getDocs(collection(db, "products"));
-      setProducts(
-        snap.docs.map((d) => ({
-          id: d.id,
-          ...(d.data() as Omit<Product, "id">),
-        }))
-      );
+      const list = snap.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as Omit<Product, "id">),
+      }));
+      setProducts(list);
     } catch (err) {
-      console.error("Failed to fetch products:", err);
+      console.error("Error fetching products:", err);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    products.forEach((p) => {
+      if (p.categoryId) set.add(p.categoryId);
+    });
+    return Array.from(set).sort();
+  }, [products]);
+
+  const visibleProducts = useMemo(() => {
+    let list = products;
+
+    if (categoryFilter !== "all") {
+      list = list.filter((p) => p.categoryId === categoryFilter);
+    }
+
+    if (statusFilter === "flash") {
+      list = list.filter((p) => p.isFlashSale === true);
+    } else if (statusFilter === "trending") {
+      list = list.filter((p) => p.isTrending === true);
+    } else if (statusFilter === "out-of-stock") {
+      list = list.filter((p) => p.inStock === false);
+    }
+
+    const q = searchTerm.trim().toLowerCase();
+    if (q) {
+      list = list.filter((p) => p.title.toLowerCase().includes(q));
+    }
+
+    return list;
+  }, [products, categoryFilter, statusFilter, searchTerm]);
 
   const setBusy = (id: string, busy: boolean) => {
     setBusyIds((prev) => {
@@ -72,350 +88,262 @@ export default function AdminProductsPage() {
     });
   };
 
-  const toggleTrending = async (product: Product) => {
+  const toggleFlag = async (
+    product: Product,
+    field: "isFlashSale" | "isTrending"
+  ) => {
     setBusy(product.id, true);
     try {
-      const newVal = !product.isTrending;
+      const newVal = !product[field];
       await updateDoc(doc(db, "products", product.id), {
-        isTrending: newVal,
+        [field]: newVal,
         updatedAt: serverTimestamp(),
       });
       setProducts((prev) =>
-        prev.map((p) => (p.id === product.id ? { ...p, isTrending: newVal } : p))
+        prev.map((p) =>
+          p.id === product.id ? { ...p, [field]: newVal } : p
+        )
       );
-    } catch (err: any) {
-      alert("Failed: " + (err?.message || "Unknown error"));
-    } finally {
-      setBusy(product.id, false);
-    }
-  };
-
-  // ✅ NEW: Toggle Weekly Sale
-  const toggleWeeklySale = async (product: Product) => {
-    setBusy(product.id, true);
-    try {
-      const newVal = !(product as any).isWeeklySale;
-      await updateDoc(doc(db, "products", product.id), {
-        isWeeklySale: newVal,
-        updatedAt: serverTimestamp(),
-      });
-      setProducts((prev) =>
-        prev.map((p) => (p.id === product.id ? { ...p, isWeeklySale: newVal } as any : p))
-      );
-    } catch (err: any) {
-      alert("Failed: " + (err?.message || "Unknown error"));
+      await refresh();
+    } catch (err) {
+      console.error("Error updating product:", err);
+      alert("Failed to update product");
     } finally {
       setBusy(product.id, false);
     }
   };
 
   const handleDelete = async (product: Product) => {
-    if (!confirm(`Delete "${product.title}"?\n\nThis cannot be undone.`)) return;
+    if (
+      !confirm(
+        `Delete "${product.title}"?\n\nThis cannot be undone. The product will be removed from the site.`
+      )
+    ) {
+      return;
+    }
     setBusy(product.id, true);
     try {
       await deleteDoc(doc(db, "products", product.id));
       setProducts((prev) => prev.filter((p) => p.id !== product.id));
-    } catch (err: any) {
-      alert("Failed: " + (err?.message || "Unknown error"));
+      await refresh();
+    } catch (err) {
+      console.error("Error deleting:", err);
+      alert("Failed to delete product");
     } finally {
       setBusy(product.id, false);
     }
   };
 
-  const handleEditPrice = (product: Product) => {
-    setEditProduct(product);
-    setNewPrice(String(product.price));
-  };
-
-  const savePrice = async () => {
-    if (!editProduct) return;
-    const price = Number(newPrice);
-    if (!price || isNaN(price) || price < 1) {
-      return alert("Please enter a valid price greater than 0");
-    }
-    setBusy(editProduct.id, true);
-    try {
-      await updateDoc(doc(db, "products", editProduct.id), {
-        price: price,
-        oldPrice: Math.round(price * 1.25),
-        updatedAt: serverTimestamp(),
-      });
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.id === editProduct.id
-            ? { ...p, price, oldPrice: Math.round(price * 1.25) }
-            : p
-        )
-      );
-      setEditProduct(null);
-      alert("✓ Price updated successfully!");
-    } catch (err: any) {
-      alert("Failed: " + (err?.message || "Unknown error"));
-    } finally {
-      setBusy(editProduct.id, false);
-    }
-  };
-
-  const recalculateAllPrices = async () => {
-    if (!confirm("Recalculate ALL product prices using current markup tiers?\n\nThis will OVERWRITE existing prices on all products with a CNY price.")) return;
-    setRecalculating(true);
-    try {
-      let count = 0;
-      let skipped = 0;
-      const updated: Product[] = [];
-      for (const p of products) {
-        const cnyPrice = (p as any).priceOriginalCny;
-        if (!cnyPrice || cnyPrice <= 0) {
-          skipped++;
-          continue;
-        }
-        const priceUsd = cnyPrice * settings.cnyToUsd;
-        const costBdt = priceUsd * settings.usdToBdt;
-        let multiplier = 1.5;
-        if (costBdt >= 500 && costBdt < 2000) multiplier = 1.35;
-        else if (costBdt >= 2000 && costBdt < 5000) multiplier = 1.25;
-        else if (costBdt >= 5000 && costBdt < 10000) multiplier = 1.18;
-        else if (costBdt >= 10000) multiplier = 1.12;
-        const newPriceVal = Math.max(20, Math.round((costBdt * multiplier) / 10) * 10);
-        await updateDoc(doc(db, "products", p.id), {
-          price: newPriceVal,
-          oldPrice: Math.round(newPriceVal * 1.25),
-          updatedAt: serverTimestamp(),
-        });
-        updated.push({ ...p, price: newPriceVal, oldPrice: Math.round(newPriceVal * 1.25) });
-        count++;
-      }
-      setProducts(updated);
-      alert(`✓ Recalculated ${count} prices${skipped > 0 ? `\n(${skipped} skipped)` : ""}`);
-    } catch (err: any) {
-      alert("Failed: " + (err?.message || "Unknown error"));
-    } finally {
-      setRecalculating(false);
-    }
-  };
-
-  const handleJobStarted = (jobId: string) => {
-    setImageSearchJobId(jobId);
-    setImageSearchResults([]);
-    setImageSearchError(null);
-    setImageSearchLoading(true);
-
-    if (imageSearchPollRef.current) clearInterval(imageSearchPollRef.current);
-
-    imageSearchPollRef.current = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/image-search/status?jobId=${jobId}`);
-        if (!res.ok) return;
-        const data = await res.json();
-        const incoming: LiveProduct[] = data.products ?? [];
-        if (incoming.length > 0) setImageSearchResults(incoming);
-
-        if (data.status === "done") {
-          if (imageSearchPollRef.current) clearInterval(imageSearchPollRef.current);
-          setImageSearchLoading(false);
-          if (incoming.length === 0) setImageSearchError("No matches found.");
-        } else if (data.status === "error") {
-          if (imageSearchPollRef.current) clearInterval(imageSearchPollRef.current);
-          setImageSearchLoading(false);
-          setImageSearchError(data.error || "Search failed.");
-        }
-      } catch (err) {
-        console.warn("Poll error:", err);
-      }
-    }, 2000);
-  };
-
-  const clearImageSearch = () => {
-    if (imageSearchPollRef.current) clearInterval(imageSearchPollRef.current);
-    setImageSearchJobId(null);
-    setImageSearchResults([]);
-    setImageSearchError(null);
-    setImageSearchLoading(false);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (imageSearchPollRef.current) clearInterval(imageSearchPollRef.current);
-    };
-  }, []);
-
-  const visibleProducts = useMemo(() => {
-    const q = searchTerm.trim().toLowerCase();
-    if (!q) return products;
-    return products.filter((p) => p.title.toLowerCase().includes(q));
-  }, [products, searchTerm]);
-
+  const flashCount = products.filter((p) => p.isFlashSale).length;
   const trendingCount = products.filter((p) => p.isTrending).length;
-  const weeklySaleCount = products.filter((p) => (p as any).isWeeklySale).length;
+  const outOfStockCount = products.filter((p) => p.inStock === false).length;
 
   return (
-    <div className="min-h-screen bg-[#FFF6F6] p-4 md:p-8">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#E8546B]/40 bg-white px-3 py-1 text-[10px] font-bold uppercase text-[#E8546B]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#E8546B]" /> Products
-            </div>
-            <h1 className="mt-3 font-serif text-2xl font-bold text-[#2B1A24] md:text-3xl">Manage Products</h1>
-            <p className="mt-1 text-sm text-[#6B5558]">
-              {products.length} products · {trendingCount} popular · {weeklySaleCount} on sale
-            </p>
+    <div className="p-4 md:p-8 max-w-[1400px] mx-auto">
+      <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#E8546B]/40 bg-[#E8546B]/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#E8546B]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#E8546B]" />
+            Products
           </div>
-          <button onClick={() => setImageSearchOpen(true)} className="rounded-xl bg-[#E8546B] px-5 py-2.5 text-sm font-bold text-white shadow-orange-glow hover:bg-[#b02a58]">
-            + Sourcing (Apify)
+          <h1 className="mt-3 font-serif text-2xl font-bold text-[#2B1A24] md:text-3xl">
+            Manage Products
+          </h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Control what's on your homepage. Toggle Flash Sale and Trending.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={() => setIsSearchOpen(true)}
+            className="rounded-lg border-2 border-[#E8546B] bg-white px-4 py-2.5 text-sm font-semibold text-[#E8546B] transition hover:bg-[#FFF6F6]"
+          >
+            📸 Image Search
           </button>
-        </div>
 
-        <div className="mb-4 rounded-2xl border border-[#E8546B]/30 bg-[#FDE8EC] p-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-bold text-[#2B1A24]">Bulk Price Recalculation</p>
-            <p className="text-xs text-[#6B5558]">Apply current markup tiers to all existing products</p>
-          </div>
-          <button onClick={recalculateAllPrices} disabled={recalculating} className="rounded-lg bg-[#E8546B] px-4 py-2 text-xs font-bold text-white hover:bg-[#b02a58] disabled:opacity-50">
-            {recalculating ? "Recalculating..." : "🔄 Recalculate All Prices"}
-          </button>
-        </div>
-
-        {imageSearchJobId && (
-          <div className="mb-4 rounded-2xl border-2 border-[#E8546B]/40 bg-white p-5 shadow-sm">
-            <div className="mb-4 flex items-center justify-between border-b border-[#FAD4DD] pb-3">
-              <h2 className="text-sm font-bold text-[#E8546B] uppercase tracking-wider">Apify Search Results</h2>
-              <button onClick={clearImageSearch} className="text-xs font-semibold text-red-500 hover:underline">Clear</button>
-            </div>
-            {imageSearchLoading && imageSearchResults.length === 0 && (
-              <div className="flex items-center justify-center gap-3 py-10">
-                <span className="h-5 w-5 animate-spin rounded-full border-2 border-[#E8546B] border-t-transparent" />
-                <span className="text-sm font-medium text-[#6B5558]">Searching 1688 via Apify... (~30-50 seconds)</span>
-              </div>
-            )}
-            {imageSearchError && <p className="py-4 text-sm text-red-500">{imageSearchError}</p>}
-            {imageSearchResults.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {imageSearchResults.map((p) => (
-                  <div key={p.id} className="flex flex-col rounded-xl border border-[#FAD4DD] bg-[#FFF6F6] p-3">
-                    <button onClick={() => setPreviewProduct(p as any)} className="flex gap-3 mb-3 text-left">
-                      <div className="h-24 w-24 flex-shrink-0 rounded bg-white p-1 overflow-hidden border border-[#FAD4DD]">
-                        <img src={p.image} alt="" className="h-full w-full object-contain mix-blend-multiply" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-xs font-bold text-[#2B1A24] line-clamp-3">{p.title}</h3>
-                        <p className="mt-1 text-base font-bold text-[#E8546B]">{formatBDT(p.price)}</p>
-                        {p.colors?.length > 0 && <p className="text-[10px] text-[#6B5558] mt-1">{p.colors.length} colors</p>}
-                        {p.sizes?.length > 0 && <p className="text-[10px] text-[#6B5558]">{p.sizes.length} sizes</p>}
-                      </div>
-                    </button>
-                    <div className="mt-auto flex gap-2">
-                      <button onClick={() => setPreviewProduct(p as any)} className="flex-1 rounded-lg bg-white border border-[#E8546B] py-2 text-xs font-bold text-[#E8546B] hover:bg-[#FFF6F6]">Preview</button>
-                      <button onClick={() => { setSelectedProduct(p); setAddModalOpen(true); }} className="flex-1 rounded-lg bg-[#E8546B] py-2 text-xs font-bold text-white hover:bg-[#b02a58]">Add</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="relative mb-4">
-          <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Search products by title..." className="w-full rounded-lg border border-[#FAD4DD] bg-white py-2.5 pl-10 pr-3 text-sm focus:border-[#E8546B] focus:outline-none" />
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A88F92]">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-          </span>
-        </div>
-
-        <div className="space-y-2">
-          {loading ? (
-            <div className="text-center py-16"><div className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-[#E8546B] border-t-transparent" /></div>
-          ) : visibleProducts.length === 0 ? (
-            <div className="rounded-lg border border-[#FAD4DD] bg-white p-10 text-center">
-              <p className="text-[#6B5558]">{searchTerm ? `No products match "${searchTerm}"` : "No products yet. Click 'Sourcing (Apify)' to add products."}</p>
-            </div>
-          ) : (
-            visibleProducts.map((product) => (
-              <div key={product.id} className="rounded-lg border border-[#FAD4DD] bg-white p-3 shadow-sm">
-                <div className="flex flex-wrap items-center gap-3">
-                  <button onClick={() => setPreviewProduct(product)} className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#FAD4DD] bg-[#FFF6F6] hover:border-[#E8546B] transition">
-                    {product.image ? <img src={product.image} alt="" className="h-full w-full object-contain mix-blend-multiply" /> : <span className="text-2xl">🎁</span>}
-                  </button>
-                  <button onClick={() => setPreviewProduct(product)} className="min-w-0 flex-1 text-left">
-                    <h3 className="line-clamp-2 text-sm font-semibold text-[#2B1A24] hover:text-[#E8546B]">{product.title}</h3>
-                    <p className="mt-1 text-xs font-bold text-[#E8546B]">{formatBDT(product.price)}</p>
-                  </button>
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <button onClick={() => handleEditPrice(product)} disabled={busyIds.has(product.id)} className="rounded-full border border-[#FAD4DD] bg-white px-3 py-1.5 text-xs font-semibold text-[#6B5558] hover:border-[#E8546B] hover:text-[#E8546B] disabled:opacity-40">💰 Price</button>
-                    <button onClick={() => toggleTrending(product)} disabled={busyIds.has(product.id)} className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-40 ${product.isTrending ? "border-[#E8546B] bg-[#E8546B] text-white" : "border-[#FAD4DD] bg-white text-[#6B5558] hover:border-[#E8546B]"}`}>⭐ Popular</button>
-                    
-                    {/* ✅ NEW WEEKLY SALE BUTTON */}
-                    <button onClick={() => toggleWeeklySale(product)} disabled={busyIds.has(product.id)} className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-40 ${(product as any).isWeeklySale ? "border-orange-500 bg-orange-500 text-white" : "border-[#FAD4DD] bg-white text-[#6B5558] hover:border-orange-500"}`}>🔥 Sale</button>
-
-                    <button onClick={() => handleDelete(product)} disabled={busyIds.has(product.id)} className="flex h-8 w-8 items-center justify-center rounded-full border border-[#FAD4DD] text-[#A88F92] hover:border-red-300 hover:text-red-500 disabled:opacity-40">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
+          <Link
+            href="/control-room/products/import"
+            className="rounded-lg bg-[#E8546B] px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-[#d1475e]"
+          >
+            📥 Import 1688
+          </Link>
         </div>
       </div>
 
-      {editProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setEditProduct(null)}>
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-bold text-[#2B1A24] mb-2">Edit Price</h2>
-            <p className="text-xs text-[#6B5558] mb-4 line-clamp-2">{editProduct.title}</p>
-            <label className="block text-xs font-bold text-[#6B5558] mb-1">New Price (৳)</label>
-            <input type="number" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} min={1} autoFocus className="w-full rounded-lg border border-[#FAD4DD] bg-[#FFF6F6] px-4 py-3 text-lg font-bold focus:border-[#E8546B] focus:outline-none mb-4" />
-            <div className="flex gap-2">
-              <button onClick={() => setEditProduct(null)} className="flex-1 rounded-lg border border-[#FAD4DD] py-2.5 text-sm font-semibold text-[#6B5558]">Cancel</button>
-              <button onClick={savePrice} className="flex-1 rounded-lg bg-[#E8546B] py-2.5 text-sm font-bold text-white hover:bg-[#b02a58]">Save</button>
-            </div>
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <StatCard label="Total" value={products.length} icon="📦" />
+        <StatCard label="Flash Sale" value={flashCount} icon="⚡" />
+        <StatCard label="Trending" value={trendingCount} icon="🔥" />
+        <StatCard label="Out of Stock" value={outOfStockCount} icon="🚫" />
+      </div>
+
+      <div className="mt-6 flex flex-col gap-3 md:flex-row md:items-center">
+        <div className="relative flex-1">
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </span>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by product title..."
+            className="w-full rounded-lg border border-[#FAD4DD] bg-white py-2.5 pl-10 pr-3 text-sm text-[#2B1A24] placeholder:text-gray-400 focus:border-[#E8546B] focus:outline-none"
+          />
+        </div>
+
+        <select
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+          className="rounded-lg border border-[#FAD4DD] bg-white px-3 py-2.5 text-sm text-[#2B1A24] focus:border-[#E8546B] focus:outline-none md:w-56"
+        >
+          <option value="all">All Categories</option>
+          {categories.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="mt-4 flex gap-1.5 overflow-x-auto pb-1">
+        <StatusTab label="All" count={products.length} active={statusFilter === "all"} onClick={() => setStatusFilter("all")} />
+        <StatusTab label="Flash Sale" count={flashCount} active={statusFilter === "flash"} onClick={() => setStatusFilter("flash")} />
+        <StatusTab label="Trending" count={trendingCount} active={statusFilter === "trending"} onClick={() => setStatusFilter("trending")} />
+        <StatusTab label="Out of Stock" count={outOfStockCount} active={statusFilter === "out-of-stock"} onClick={() => setStatusFilter("out-of-stock")} />
+      </div>
+
+      <p className="mt-3 text-xs text-gray-500">
+        <span className="font-bold text-[#2B1A24]">
+          {visibleProducts.length}
+        </span>{" "}
+        {visibleProducts.length === 1 ? "product" : "products"} shown
+      </p>
+
+      <div className="mt-3 space-y-2">
+        {loading ? (
+          <div className="flex justify-center py-16">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#E8546B] border-t-transparent" />
+          </div>
+        ) : visibleProducts.length === 0 ? (
+          <div className="rounded-lg border border-[#FAD4DD] bg-white p-10 text-center shadow-sm">
+            <div className="text-5xl opacity-40">📭</div>
+            <h3 className="mt-3 font-serif text-base font-bold text-[#2B1A24] md:text-lg">
+              No products found
+            </h3>
+            <p className="mt-1 text-xs text-gray-500 md:text-sm">
+              {searchTerm
+                ? `Nothing matches "${searchTerm}"`
+                : "Adjust filters or add a new product."}
+            </p>
+          </div>
+        ) : (
+          visibleProducts.map((product) => (
+            <ProductRow
+              key={product.id}
+              product={product}
+              busy={busyIds.has(product.id)}
+              onToggleFlash={() => toggleFlag(product, "isFlashSale")}
+              onToggleTrending={() => toggleFlag(product, "isTrending")}
+              onDelete={() => handleDelete(product)}
+            />
+          ))
+        )}
+      </div>
+
+      <ImageSearchModal 
+        isOpen={isSearchOpen} 
+        onClose={() => { setIsSearchOpen(false); fetchProducts(); }} 
+      />
+    </div>
+  );
+}
+
+function StatCard({ label, value, icon }: { label: string; value: number; icon: string }) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-[#FAD4DD] bg-white p-4 shadow-sm">
+      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-[#FFF6F6] text-lg">
+        {icon}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-lg font-bold text-[#2B1A24]">{value}</p>
+        <p className="text-[11px] text-gray-500">{label}</p>
+      </div>
+    </div>
+  );
+}
+
+function StatusTab({ label, count, active, onClick }: { label: string; count: number; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex flex-shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+        active
+          ? "border-[#E8546B] bg-[#E8546B] text-white"
+          : "border-[#FAD4DD] bg-white text-gray-600 hover:border-[#E8546B] hover:text-[#E8546B]"
+      }`}
+    >
+      {label}
+      <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${active ? "bg-white/20 text-white" : "bg-[#FFF6F6] text-gray-500"}`}>
+        {count}
+      </span>
+    </button>
+  );
+}
+
+function ProductRow({ product, busy, onToggleFlash, onToggleTrending, onDelete }: { product: Product; busy: boolean; onToggleFlash: () => void; onToggleTrending: () => void; onDelete: () => void }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const showImage = product.image && !imgFailed;
+
+  return (
+    <div className={`rounded-lg border border-[#FAD4DD] bg-white p-3 shadow-sm transition md:p-4 ${busy ? "opacity-60" : ""}`}>
+      <div className="flex flex-wrap items-center gap-3">
+        <Link href={`/control-room/products/${product.id}`} className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#FAD4DD] bg-[#FFF6F6]">
+          {showImage ? (
+            <img src={product.image} alt="" referrerPolicy="no-referrer" className="h-full w-full object-contain p-1" onError={() => setImgFailed(true)} />
+          ) : (
+            <span className="text-2xl">📦</span>
+          )}
+        </Link>
+
+        <div className="min-w-0 flex-1 pr-4">
+          <Link href={`/control-room/products/${product.id}`}>
+            <h3 className="line-clamp-2 text-sm font-semibold text-[#2B1A24] transition hover:text-[#E8546B] md:text-base">
+              {product.title}
+            </h3>
+          </Link>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-500 md:text-xs">
+            {/* ✅ Just the price, no editing here */}
+            <span className="font-bold text-[#E8546B]">{formatBDT(product.price)}</span>
+            
+            {product.categoryId && (
+              <span className="rounded bg-[#FFF6F6] px-1.5 py-0.5">{product.categoryId}</span>
+            )}
+            <span>{(product.views ?? 0)} views</span>
+            {product.inStock === false && (
+              <span className="rounded bg-red-100 px-1.5 py-0.5 font-bold text-red-600">Out of stock</span>
+            )}
           </div>
         </div>
-      )}
 
-      {previewProduct && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={() => setPreviewProduct(null)}>
-          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start justify-between mb-4">
-              <h2 className="text-lg font-bold text-[#2B1A24]">Product Preview</h2>
-              <button onClick={() => setPreviewProduct(null)} className="text-gray-400 hover:text-gray-600">✕</button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="aspect-square rounded-xl bg-[#FFF6F6] border border-[#FAD4DD] overflow-hidden p-4">
-                <img src={previewProduct.image} alt="" className="w-full h-full object-contain mix-blend-multiply" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-[#2B1A24]">{previewProduct.title}</h3>
-                <p className="mt-2 text-xl font-bold text-[#E8546B]">{formatBDT(previewProduct.price)}</p>
-                {previewProduct.colors && previewProduct.colors.length > 0 && (
-                  <div className="mt-3">
-                    <p className="text-xs font-bold text-[#6B5558] mb-1">Colors ({previewProduct.colors.length}):</p>
-                    <div className="flex flex-wrap gap-1">
-                      {(previewProduct.colors as any[]).map((c, i) => (
-                        <span key={i} className="text-[10px] bg-[#FFF6F6] px-2 py-0.5 rounded border border-[#FAD4DD]">{typeof c === "string" ? c : c.label}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {previewProduct.sizes && previewProduct.sizes.length > 0 && (
-                  <div className="mt-2">
-                    <p className="text-xs font-bold text-[#6B5558] mb-1">Sizes:</p>
-                    <p className="text-[10px] text-[#6B5558]">{previewProduct.sizes.join(", ")}</p>
-                  </div>
-                )}
-                <p className="mt-3 text-[11px] text-[#6B5558] line-clamp-4">{previewProduct.description}</p>
-              </div>
-            </div>
-            <div className="mt-4 flex gap-2">
-              <button onClick={() => setPreviewProduct(null)} className="flex-1 rounded-lg border border-[#FAD4DD] py-2.5 text-sm font-semibold text-[#6B5558]">Close</button>
-              <button onClick={() => { setSelectedProduct(previewProduct as any); setAddModalOpen(true); setPreviewProduct(null); }} className="flex-1 rounded-lg bg-[#E8546B] py-2.5 text-sm font-bold text-white hover:bg-[#b02a58]">Add to Store</button>
-            </div>
-          </div>
+        <div className="flex flex-wrap items-center gap-1.5 md:flex-shrink-0">
+          <button onClick={onToggleFlash} disabled={busy} className={`flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${product.isFlashSale ? "border-[#E8546B] bg-[#E8546B] text-white" : "border-[#FAD4DD] bg-white text-gray-600 hover:border-[#E8546B] hover:text-[#E8546B]"} disabled:opacity-40`} title="Toggle Flash Sale">
+            ⚡ Flash
+          </button>
+          <button onClick={onToggleTrending} disabled={busy} className={`flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${product.isTrending ? "border-[#E8546B] bg-[#E8546B] text-white" : "border-[#FAD4DD] bg-white text-gray-600 hover:border-[#E8546B] hover:text-[#E8546B]"} disabled:opacity-40`} title="Toggle Trending">
+            🔥 Trending
+          </button>
+          <button onClick={onDelete} disabled={busy} className="flex h-8 w-8 items-center justify-center rounded-full border border-[#FAD4DD] text-gray-500 transition hover:border-red-500 hover:bg-red-50 hover:text-red-500 disabled:opacity-40" title="Delete product">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
+          </button>
         </div>
-      )}
-
-      <ImageSearchModal open={imageSearchOpen} onClose={() => setImageSearchOpen(false)} onJobStarted={handleJobStarted} />
-      <AddProductModal open={addModalOpen} product={selectedProduct} onClose={() => setAddModalOpen(false)} onAdded={fetchProducts} />
+      </div>
     </div>
   );
 }

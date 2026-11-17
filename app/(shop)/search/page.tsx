@@ -72,7 +72,7 @@ function SearchContent() {
   // ✅ Filter & Sort Logic
   const displayProducts = useMemo(() => {
     if (isImageSearch) return imageResults;
-    
+
     let list = [...products];
 
     if (categoryParam) {
@@ -83,13 +83,21 @@ function SearchContent() {
       list = list.filter((p) => p.title.toLowerCase().includes(query));
     }
 
+    // ✅ BULLETPROOF SUBCATEGORY MATCHING
     if (subcategoryParam) {
       const subName = subcategoryParam.replace(/-/g, " ").toLowerCase();
-      list = list.filter((p) => 
-        p.title.toLowerCase().includes(subName) || 
-        (p.subtitle && p.subtitle.toLowerCase().includes(subName)) ||
-        (p as any).subcategory === subcategoryParam
-      );
+      list = list.filter((p: any) => {
+        const pSubId = String(p.subcategoryId || "").toLowerCase();
+        const pSubName = String(p.subcategory || "").toLowerCase();
+        
+        return (
+          pSubId === subcategoryParam.toLowerCase() ||
+          pSubName === subName || 
+          pSubName === subcategoryParam.toLowerCase() ||
+          p.title.toLowerCase().includes(subName) || 
+          (p.subtitle && p.subtitle.toLowerCase().includes(subName))
+        );
+      });
     }
 
     // ✅ Availability Filter
@@ -123,8 +131,7 @@ function SearchContent() {
 
   return (
     <div className="min-h-screen bg-[#FFF6F6] pb-20">
-      
-      {/* 🔥 SMALLER, SLEEK TOP HEADER BAR */}
+      {/* HEADER BAR */}
       <div className="bg-white border-b border-[#FAD4DD] mb-6">
         <div className="mx-auto max-w-[1400px] px-4 py-5 flex items-baseline gap-4">
           <h1 className="font-serif text-2xl md:text-3xl font-bold text-[#2B1A24]">
@@ -146,21 +153,18 @@ function SearchContent() {
 
       <div className="mx-auto max-w-[1400px] px-4">
         <div className="flex flex-col md:flex-row gap-6 items-start">
-          
           {/* LEFT SIDEBAR */}
           {!isImageSearch && (
             <aside className="hidden md:block w-[280px] shrink-0">
               <div className="sticky top-24 space-y-4">
-                
-                {/* PRODUCT AVAILABILITY FILTER */}
+                {/* Availability */}
                 <div className="bg-white rounded-2xl border border-[#FAD4DD] p-5 shadow-sm">
                   <div className="mb-4">
                     <h3 className="font-bold text-[#2B1A24] text-sm uppercase tracking-wider">Product Availability</h3>
                     <p className="text-[11px] text-[#6B5558] mt-1">Live status</p>
                   </div>
-                  
+
                   <div className="space-y-3">
-                    {/* Ready to Ship */}
                     <button
                       onClick={() => setAvailabilityFilter(availabilityFilter === "in-stock" ? "all" : "in-stock")}
                       className={`w-full text-left p-3 rounded-xl border transition-all ${
@@ -180,7 +184,6 @@ function SearchContent() {
                       </span>
                     </button>
 
-                    {/* Pre-Order */}
                     <button
                       onClick={() => setAvailabilityFilter(availabilityFilter === "pre-order" ? "all" : "pre-order")}
                       className={`w-full text-left p-3 rounded-xl border transition-all ${
@@ -218,15 +221,12 @@ function SearchContent() {
                   </select>
                 </div>
 
-                {/* Price Filter */}
+                {/* Price */}
                 <div className="bg-white rounded-2xl border border-[#FAD4DD] p-5 shadow-sm">
                   <h3 className="font-bold text-[#2B1A24] mb-4 text-sm uppercase tracking-wider">Price Range</h3>
                   <div className="space-y-4">
                     <input 
-                      type="range" 
-                      min="500" 
-                      max="5000" 
-                      step="100"
+                      type="range" min="500" max="5000" step="100"
                       value={priceRange[1]}
                       onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
                       className="w-full accent-[#E8546B] cursor-pointer"
@@ -239,21 +239,18 @@ function SearchContent() {
                   </div>
                 </div>
 
-                {/* Clear Filters Button */}
                 <button 
                   onClick={clearFilters}
                   className="w-full rounded-xl border-2 border-[#E8546B] bg-white py-3 text-sm font-bold text-[#E8546B] transition-colors hover:bg-[#E8546B] hover:text-white shadow-sm"
                 >
                   Clear All Filters
                 </button>
-
               </div>
             </aside>
           )}
 
           {/* PRODUCT GRID */}
           <div className="flex-1 min-w-0">
-            {/* Mobile Filter Trigger */}
             {!isImageSearch && (
               <div className="md:hidden mb-4 flex justify-end">
                 <button 
@@ -299,10 +296,8 @@ function SearchContent() {
               <h3 className="font-serif text-xl font-bold text-[#2B1A24]">Filters</h3>
               <button onClick={() => setMobileFilterOpen(false)} className="text-2xl text-[#6B5558]">×</button>
             </div>
-            
+
             <div className="space-y-6">
-              
-              {/* Mobile Availability */}
               <div>
                 <h4 className="font-bold text-[#2B1A24] mb-3 text-sm uppercase">Availability</h4>
                 <div className="flex gap-2">
@@ -339,10 +334,7 @@ function SearchContent() {
               <div>
                 <h4 className="font-bold text-[#2B1A24] mb-3 text-sm uppercase">Price Range</h4>
                 <input 
-                  type="range" 
-                  min="500" 
-                  max="5000" 
-                  step="100"
+                  type="range" min="500" max="5000" step="100"
                   value={priceRange[1]}
                   onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
                   className="w-full accent-[#E8546B]"

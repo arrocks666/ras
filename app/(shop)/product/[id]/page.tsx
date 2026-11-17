@@ -6,13 +6,14 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { formatBDT } from "@/lib/data";
 import { useCart } from "@/lib/CartContext";
-import { loadSettings, DEFAULT_SETTINGS, type StoreSettings } from "@/lib/firestoreSettings";
+import { 
+  loadSettings, 
+  DEFAULT_SETTINGS, 
+  DEFAULT_SHIPPING_RATES, 
+  type StoreSettings 
+} from "@/lib/firestoreSettings";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import Link from "next/link";
-
-// Note: Because this is a "use client" file, we can't use `generateMetadata` here.
-// To fix the WhatsApp preview, we will add a useEffect to set the document title and description dynamically.
-// This is the safest way to fix the 500 error without splitting files.
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -29,7 +30,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [shippingModalOpen, setShippingModalOpen] = useState(false);
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_SETTINGS);
 
-  // Button states for premium feedback
   const [btnState, setBtnState] = useState<"idle" | "loading" | "success">("idle");
 
   useEffect(() => {
@@ -45,8 +45,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           setProduct({ id: snap.id, ...data });
           setSelectedImage(data.image || "");
           setCurrentPrice(data.price || 0);
-          
-          // ✅ DYNAMIC SEO SETUP
+
           document.title = `${data.title || "Product"} - ৳${data.price} | Ratry's Artistry Shop`;
           let metaDesc = document.querySelector('meta[name="description"]');
           if (!metaDesc) {
@@ -55,7 +54,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             document.head.appendChild(metaDesc);
           }
           metaDesc.setAttribute("content", data.description?.slice(0, 160) || "Shop premium products from China to Bangladesh.");
-          
+
           if (data.colors && data.colors.length > 0) {
             const first = data.colors[0] as any;
             const colorObj = typeof first === "string" ? { label: first, image: "" } : first;
@@ -108,27 +107,28 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     router.push("/checkout");
   };
 
-  const handleQuantityChange = (val: string) => {
-    if (val === "") { setQuantity(""); return; }
-    const num = Number(val);
-    if (!isNaN(num) && num >= 1 && num <= 99) setQuantity(num);
-  };
-
-  const handleQuantityBlur = () => {
-    if (quantity === "" || Number(quantity) < 1) setQuantity(1);
-  };
-
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#FFF6F6]"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[#E8546B] border-t-transparent" /></div>;
   if (!product) return <div className="min-h-screen flex flex-col items-center justify-center bg-[#FFF6F6]"><h1 className="text-xl font-bold text-[#2B1A24]">Product not found</h1><Link href="/" className="mt-4 text-[#E8546B] underline">Go back home</Link></div>;
 
   const colorsArray = (product.colors || []).map((c: any) => typeof c === "string" ? { label: c, image: "" } : c);
   const sizesArray = (product.sizes || []).map((s: any) => typeof s === "string" ? s : (s.label || s));
+  
+  const cleanLabel = (text: string) => {
+    if (!text) return "";
+    const match = text.match(/[a-zA-Z0-9\s-]+/); 
+    return match ? match[0].trim() : text.split(/[【\[]/)[0].trim();
+  };
+
   const discountPercent = product.oldPrice && product.oldPrice > currentPrice ? Math.round(((product.oldPrice - currentPrice) / product.oldPrice) * 100) : 0;
   const productUrl = typeof window !== "undefined" ? window.location.href : "";
+  
+  // ✅ Use rates from settings, with fallback to defaults
+  const shippingRates = (settings.shippingRates && settings.shippingRates.length > 0) 
+    ? settings.shippingRates 
+    : DEFAULT_SHIPPING_RATES;
 
   return (
     <div className="min-h-screen bg-[#FFF6F6] pb-20">
-      
       <div className="mx-auto max-w-[1400px] px-4 py-4 text-xs text-[#6B5558] flex items-center gap-2">
         <Link href="/" className="hover:text-[#E8546B]">Home</Link>
         <span>/</span>
@@ -139,7 +139,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
       <div className="mx-auto max-w-[1400px] px-4">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
           <div className="lg:col-span-5">
             <div className="lg:sticky lg:top-24">
               <div className="relative w-full aspect-square max-h-[550px] rounded-2xl bg-white border border-[#FAD4DD] overflow-hidden flex items-center justify-center p-4 mx-auto">
@@ -178,19 +177,29 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               {product.oldPrice && product.oldPrice > currentPrice && <span className="text-lg text-[#A88F92] line-through">{formatBDT(product.oldPrice)}</span>}
             </div>
 
+            {/* ✅ PREMIUM COLOR SELECTION */}
             {colorsArray.length > 0 && colorsArray[0].label !== "Default" && (
               <div className="mb-6">
-                <p className="text-sm font-bold text-[#2B1A24] mb-3">Color: <span className="font-normal text-[#6B5558]">{selectedColor?.label}</span></p>
-                <div className="flex flex-wrap gap-2">
+                <p className="text-sm font-bold text-[#2B1A24] mb-3">Color: <span className="font-normal text-[#6B5558]">{cleanLabel(selectedColor?.label)}</span></p>
+                <div className="flex flex-wrap gap-3">
                   {colorsArray.map((c: any, idx: number) => {
                     const imgSrc = c.image || product.image;
                     const isActive = selectedColor?.label === c.label;
                     return (
-                      <button key={idx} onClick={() => handleSelectColor(c)} className={`flex flex-col items-center gap-1 rounded-lg border-2 p-1.5 transition ${isActive ? "border-[#E8546B] bg-[#FFF6F6]" : "border-[#FAD4DD] bg-white hover:border-[#E8546B]"}`} title={c.label}>
-                        <div className="h-12 w-12 rounded bg-gray-100 overflow-hidden">
-                          {imgSrc ? <img src={imgSrc} alt={c.label} className="h-full w-full object-contain mix-blend-multiply" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} /> : <div className="h-full w-full" style={{ backgroundColor: c.hex || "#E8546B" }} />}
+                      <button 
+                        key={idx} 
+                        onClick={() => handleSelectColor(c)} 
+                        className={`flex flex-col items-center gap-2 rounded-xl border-2 p-2 transition min-w-[70px] ${isActive ? "border-[#E8546B] bg-[#FFF6F6] shadow-sm" : "border-[#FAD4DD] bg-white hover:border-[#E8546B]"}`} 
+                        title={cleanLabel(c.label)}
+                      >
+                        <div className="h-14 w-14 rounded-lg bg-gray-50 overflow-hidden">
+                          {imgSrc ? (
+                            <img src={imgSrc} alt={c.label} className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = product.image; }} />
+                          ) : (
+                            <div className="h-full w-full" style={{ backgroundColor: c.hex || "#E8546B" }} />
+                          )}
                         </div>
-                        <span className="text-[9px] text-[#6B5558] max-w-[60px] truncate">{c.label}</span>
+                        <span className={`text-[11px] font-medium max-w-[80px] truncate ${isActive ? "text-[#E8546B]" : "text-[#6B5558]"}`}>{cleanLabel(c.label)}</span>
                       </button>
                     );
                   })}
@@ -198,13 +207,25 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               </div>
             )}
 
+            {/* ✅ PREMIUM SIZE SELECTION */}
             {sizesArray.length > 0 && sizesArray[0] !== "One Size" && (
               <div className="mb-6">
-                <p className="text-sm font-bold text-[#2B1A24] mb-3">Size: <span className="font-normal text-[#6B5558]">{selectedSize}</span></p>
+                <p className="text-sm font-bold text-[#2B1A24] mb-3">Size: <span className="font-normal text-[#6B5558]">{cleanLabel(selectedSize)}</span></p>
                 <div className="flex flex-wrap gap-2">
-                  {sizesArray.map((s: string) => (
-                    <button key={s} onClick={() => setSelectedSize(s)} className={`rounded-lg border w-12 h-10 flex items-center justify-center text-xs font-bold transition ${selectedSize === s ? "border-[#E8546B] bg-[#FFF6F6] text-[#E8546B]" : "border-[#FAD4DD] bg-white text-[#6B5558] hover:border-[#E8546B]"}`}>{s}</button>
-                  ))}
+                  {sizesArray.map((s: string) => {
+                    const displaySize = cleanLabel(s);
+                    if (!displaySize) return null;
+                    
+                    return (
+                      <button 
+                        key={s} 
+                        onClick={() => setSelectedSize(s)} 
+                        className={`rounded-xl border px-4 py-2 min-w-[50px] text-sm font-bold transition ${selectedSize === s ? "border-[#E8546B] bg-[#E8546B] text-white shadow-md" : "border-[#FAD4DD] bg-white text-[#2B1A24] hover:border-[#E8546B]"}`}
+                      >
+                        {displaySize}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -215,7 +236,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 <button onClick={() => setQuantity(Math.max(1, Number(quantity) - 1))} className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FFF6F6] text-[#E8546B] transition-colors hover:bg-[#E8546B] hover:text-white disabled:opacity-50" disabled={Number(quantity) <= 1}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 </button>
-                <input type="text" value={quantity} onChange={(e) => handleQuantityChange(e.target.value)} onBlur={handleQuantityBlur} className="w-full bg-transparent text-center text-sm font-bold text-[#2B1A24] outline-none" />
+                <input type="text" value={quantity} onChange={(e) => { const val = e.target.value; if (val === "") { setQuantity(""); return; } const num = Number(val); if (!isNaN(num) && num >= 1 && num <= 99) setQuantity(num); }} onBlur={() => { if (quantity === "" || Number(quantity) < 1) setQuantity(1); }} className="w-full bg-transparent text-center text-sm font-bold text-[#2B1A24] outline-none" />
                 <button onClick={() => setQuantity(Number(quantity) + 1)} className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FFF6F6] text-[#E8546B] transition-colors hover:bg-[#E8546B] hover:text-white">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 </button>
@@ -247,7 +268,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   </span>
                 )}
               </button>
-              
+
               <WhatsAppButton
                 phoneNumber={settings.whatsappChatNumber}
                 productTitle={product.title}
@@ -294,7 +315,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           <div className="prose prose-sm max-w-none text-[#6B5558] leading-relaxed whitespace-pre-line">{product.description}</div>
         </div>
       </div>
-
+      
+      {/* ✅ SHIPPING MODAL - Now shows full chart */}
       {shippingModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={() => setShippingModalOpen(false)}>
           <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
@@ -303,29 +325,39 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <button onClick={() => setShippingModalOpen(false)} className="text-xl text-[#A88F92] hover:text-[#E8546B]">✕</button>
             </div>
             <p className="text-sm text-[#6B5558] mb-4">Check the shipping rates for different product categories from China to Bangladesh.</p>
-            <div className="rounded-xl border border-[#FAD4DD] overflow-hidden mb-4">
-              <table className="w-full text-sm">
-                <thead className="bg-[#FDE8EC]">
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-[#FFF6F6] text-[#2B1A24] text-xs uppercase">
                   <tr>
-                    <th className="text-left p-3 text-[#2B1A24] font-bold">Category</th>
-                    <th className="text-left p-3 text-[#2B1A24] font-bold">Examples</th>
-                    <th className="text-left p-3 text-[#E8546B] font-bold">Shipping Charge (৳/KG)</th>
-                    <th className="text-left p-3 text-[#2B1A24] font-bold">Special Notes</th>
+                    <th className="px-4 py-3 rounded-tl-xl">Category</th>
+                    <th className="px-4 py-3">Examples</th>
+                    <th className="px-4 py-3">Rate</th>
+                    <th className="px-4 py-3 rounded-tr-xl">Notes</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#FAD4DD]">
-                  {settings.shippingRates.map((row, i) => (
-                    <tr key={row.id || i} className="hover:bg-[#FFF6F6]">
-                      <td className="p-3 text-[#2B1A24] font-medium">{row.category}</td>
-                      <td className="p-3 text-[#6B5558]">{row.examples}</td>
-                      <td className="p-3 text-[#E8546B] font-bold">{row.rate}</td>
-                      <td className="p-3 text-[#6B5558]">{row.notes}</td>
+                  {shippingRates.map((rate) => (
+                    <tr key={rate.id} className="hover:bg-[#FFF6F6]">
+                      <td className="px-4 py-3 font-semibold text-[#2B1A24]">{rate.category}</td>
+                      <td className="px-4 py-3 text-[#6B5558]">{rate.examples}</td>
+                      <td className="px-4 py-3 font-bold text-[#E8546B]">{rate.rate}</td>
+                      <td className="px-4 py-3 text-xs text-[#6B5558]">{rate.notes}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <p className="text-xs text-[#A88F92]">⚠️ Rates are approximate and may vary based on product type, weight and shipping method.</p>
+
+            <div className="mt-6 rounded-xl bg-[#FFF6F6] p-4 text-xs text-[#6B5558]">
+              <p><strong>Note:</strong> Shipping charges are calculated by weight and volume. Final charges will be confirmed once the product arrives at our warehouse in China.</p>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button onClick={() => setShippingModalOpen(false)} className="rounded-xl bg-[#E8546B] px-6 py-2.5 text-sm font-bold text-white shadow-md hover:bg-[#d1475e]">
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

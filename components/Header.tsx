@@ -15,7 +15,7 @@ export default function Header() {
   const pathname = usePathname();
   const cart = useCart();
   const { products } = useProducts();
-  
+
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_SETTINGS);
@@ -60,7 +60,7 @@ export default function Header() {
     if (megaMenuTimeout.current) clearTimeout(megaMenuTimeout.current);
     setMegaMenuOpen(true);
   };
-  
+
   const handleMegaMenuLeave = () => {
     megaMenuTimeout.current = setTimeout(() => setMegaMenuOpen(false), 150);
   };
@@ -68,10 +68,13 @@ export default function Header() {
   const logoUrl = settings.logoUrl;
 
   const isActive = (path: string) => pathname === path;
+  
+  // ✅ Using items-center to perfectly align the text and the underline
   const navLinkClass = (path: string) => 
-    `relative pb-2 text-[13px] font-medium transition-colors hover:text-[#E8546B] ${
+    `relative flex items-center h-[32px] text-[13px] font-medium transition-colors hover:text-[#E8546B] ${
       isActive(path) ? "text-[#E8546B]" : "text-[#6B5558]"
     }`;
+    
   const underlineClass = (path: string) =>
     `absolute bottom-0 left-0 h-[2px] w-full rounded-full bg-[#E8546B] transition-transform duration-300 origin-left ${
       isActive(path) ? "scale-x-100" : "scale-x-0"
@@ -80,7 +83,7 @@ export default function Header() {
   return (
     <>
       <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-[#FAD4DD]">
-        
+
         {/* MOBILE HEADER */}
         <div className="flex md:hidden items-center justify-between px-4 py-3">
           <button onClick={() => setMobileMenuOpen(true)} className="text-[#2B1A24]">
@@ -158,24 +161,46 @@ export default function Header() {
             </div>
           </div>
 
-          {/* ✅ FIXED: Added `flex items-center` to all nav items to fix alignment */}
+          {/* ✅ NAV BAR WITH MEGA MENU HOVER */}
           <nav className="flex items-center justify-center gap-8 pb-3 text-[13px] font-medium text-[#6B5558]">
-            <Link href="/" className="flex items-center h-[30px] hover:text-[#E8546B]">Home</Link>
-            <Link href="/search" className="flex items-center h-[30px] hover:text-[#E8546B]">Shop</Link>
-            <div className="relative flex h-[30px] items-center" onMouseEnter={handleMegaMenuEnter} onMouseLeave={handleMegaMenuLeave}>
-              <button 
-                onClick={() => router.push("/categories")} 
-                className={`flex items-center gap-1 text-[13px] font-medium transition-colors hover:text-[#E8546B] ${megaMenuOpen ? "text-[#E8546B]" : "text-[#6B5558]"}`}
-              >
+            <Link href="/" className={navLinkClass("/")}>
+              Home
+              <span className={underlineClass("/")} />
+            </Link>
+            <Link href="/search" className={navLinkClass("/search")}>
+              Shop
+              <span className={underlineClass("/search")} />
+            </Link>
+            
+            {/* ✅ Removed onClick, now only opens on hover */}
+            <div 
+              className="relative flex h-[32px] items-center cursor-pointer" 
+              onMouseEnter={handleMegaMenuEnter} 
+              onMouseLeave={handleMegaMenuLeave}
+            >
+              <span className={`flex items-center gap-1 text-[13px] font-medium transition-colors hover:text-[#E8546B] ${megaMenuOpen ? "text-[#E8546B]" : "text-[#6B5558]"}`}>
                 Categories
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className={`transition-transform duration-300 ${megaMenuOpen ? "rotate-180" : ""}`}><path d="M6 9l6 6 6-6"/></svg>
-              </button>
-              <span className={`absolute bottom-[-8px] left-0 h-[2px] w-full rounded-full bg-[#E8546B] transition-transform duration-300 origin-left ${megaMenuOpen ? "scale-x-100" : "scale-x-0"}`} />
+              </span>
+              <span className={`absolute bottom-0 left-0 h-[2px] w-full rounded-full bg-[#E8546B] transition-transform duration-300 origin-left ${megaMenuOpen ? "scale-x-100" : "scale-x-0"}`} />
             </div>
-            <Link href="/new" className="flex items-center h-[30px] hover:text-[#E8546B]">New Arrivals</Link>
-            <Link href="/about" className="flex items-center h-[30px] hover:text-[#E8546B]">About Us</Link>
-            <Link href="/tracking" className="flex items-center h-[30px] hover:text-[#E8546B]">Track Order</Link>
-            <Link href="/contact" className="flex items-center h-[30px] hover:text-[#E8546B]">Contact</Link>
+
+            <Link href="/new" className={navLinkClass("/new")}>
+              New Arrivals
+              <span className={underlineClass("/new")} />
+            </Link>
+            <Link href="/about" className={navLinkClass("/about")}>
+              About Us
+              <span className={underlineClass("/about")} />
+            </Link>
+            <Link href="/tracking" className={navLinkClass("/tracking")}>
+              Track Order
+              <span className={underlineClass("/tracking")} />
+            </Link>
+            <Link href="/contact" className={navLinkClass("/contact")}>
+              Contact
+              <span className={underlineClass("/contact")} />
+            </Link>
           </nav>
 
           {megaMenuOpen && (
@@ -195,13 +220,13 @@ export default function Header() {
               <span className="font-serif text-xl font-bold text-[#E8546B]">Menu</span>
               <button onClick={() => setMobileMenuOpen(false)} className="text-2xl text-[#6B5558]">✕</button>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto">
-              <button onClick={() => { setMobileMenuOpen(false); router.push("/"); }} className="w-full text-left px-6 py-4 font-bold text-[#2B1A24] border-b border-[#FAD4DD]/50">Home</button>
-              <button onClick={() => { setMobileMenuOpen(false); router.push("/search"); }} className="w-full text-left px-6 py-4 font-bold text-[#2B1A24] border-b border-[#FAD4DD]/50">Shop</button>
-              
+              <button onClick={() => { setMobileMenuOpen(false); router.push("/"); }} className={`w-full text-left px-6 py-4 font-bold border-b border-[#FAD4DD]/50 ${isActive("/") ? "text-[#E8546B]" : "text-[#2B1A24]"}`}>Home</button>
+              <button onClick={() => { setMobileMenuOpen(false); router.push("/search"); }} className={`w-full text-left px-6 py-4 font-bold border-b border-[#FAD4DD]/50 ${isActive("/search") ? "text-[#E8546B]" : "text-[#2B1A24]"}`}>Shop</button>
+
               <div className="px-6 py-3 font-bold text-[#E8546B] uppercase text-[11px] tracking-wider bg-[#FFF6F6]">All Categories</div>
-              
+
               {CATEGORIES.map((cat) => (
                 <div key={cat.id} className="border-b border-[#FAD4DD]/50">
                   <button 
@@ -211,7 +236,7 @@ export default function Header() {
                     <span className="flex items-center gap-3"><span className="text-lg">{cat.icon}</span> {cat.name}</span>
                     <span className="text-xs transition-transform duration-300" style={{ transform: expandedMobileCat === cat.id ? 'rotate(180deg)' : 'none' }}>▼</span>
                   </button>
-                  
+
                   {expandedMobileCat === cat.id && (
                     <div className="bg-[#FFF6F6] py-2">
                       {cat.subcategories.map(sub => (
@@ -228,12 +253,12 @@ export default function Header() {
                   )}
                 </div>
               ))}
-              
+
               <div className="mt-4 border-t border-[#FAD4DD]">
-                <button onClick={() => { setMobileMenuOpen(false); router.push("/new"); }} className="w-full text-left px-6 py-4 font-bold text-[#2B1A24] border-b border-[#FAD4DD]/50">New Arrivals</button>
-                <button onClick={() => { setMobileMenuOpen(false); router.push("/about"); }} className="w-full text-left px-6 py-4 font-bold text-[#2B1A24] border-b border-[#FAD4DD]/50">About Us</button>
-                <button onClick={() => { setMobileMenuOpen(false); router.push("/tracking"); }} className="w-full text-left px-6 py-4 font-bold text-[#2B1A24] border-b border-[#FAD4DD]/50">Track Order</button>
-                <button onClick={() => { setMobileMenuOpen(false); router.push("/contact"); }} className="w-full text-left px-6 py-4 font-bold text-[#2B1A24] border-b border-[#FAD4DD]/50">Contact</button>
+                <button onClick={() => { setMobileMenuOpen(false); router.push("/new"); }} className={`w-full text-left px-6 py-4 font-bold border-b border-[#FAD4DD]/50 ${isActive("/new") ? "text-[#E8546B]" : "text-[#2B1A24]"}`}>New Arrivals</button>
+                <button onClick={() => { setMobileMenuOpen(false); router.push("/about"); }} className={`w-full text-left px-6 py-4 font-bold border-b border-[#FAD4DD]/50 ${isActive("/about") ? "text-[#E8546B]" : "text-[#2B1A24]"}`}>About Us</button>
+                <button onClick={() => { setMobileMenuOpen(false); router.push("/tracking"); }} className={`w-full text-left px-6 py-4 font-bold border-b border-[#FAD4DD]/50 ${isActive("/tracking") ? "text-[#E8546B]" : "text-[#2B1A24]"}`}>Track Order</button>
+                <button onClick={() => { setMobileMenuOpen(false); router.push("/contact"); }} className={`w-full text-left px-6 py-4 font-bold border-b border-[#FAD4DD]/50 ${isActive("/contact") ? "text-[#E8546B]" : "text-[#2B1A24]"}`}>Contact</button>
               </div>
             </div>
           </div>
