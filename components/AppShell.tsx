@@ -9,7 +9,6 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith("/control-room");
-  const ownsBottomBar = pathname === "/cart" || pathname === "/checkout";
 
   if (isAdmin) {
     return <main className="flex-1">{children}</main>;
@@ -17,20 +16,20 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      {/* Desktop header — unchanged, hidden on mobile */}
-      <div className="hidden md:block">
+      {/* Desktop header — unchanged, hidden below 1024px */}
+      <div className="hidden lg:block">
         <Header />
       </div>
 
-      {/* Mobile header (pink app header) */}
+      {/* Mobile / tablet header (pink app header) */}
       <MobileHeader />
 
       <main className="flex-1">{children}</main>
 
       <Footer />
 
-      {/* keeps the last row of the footer above the floating bottom nav */}
-      {!ownsBottomBar && <div aria-hidden className="h-[78px] md:hidden" />}
+      {/* keeps the last row above the floating bottom nav (nav is always visible) */}
+      <div aria-hidden className="h-[86px] lg:hidden" />
 
       <MobileBottomNav />
     </>

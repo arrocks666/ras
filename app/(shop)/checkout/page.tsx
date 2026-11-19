@@ -77,13 +77,21 @@ function CheckoutContent() {
   }, [user]);
 
   const itemsParam = searchParams.get("items") ?? "";
-  const selectedKeys = itemsParam ? itemsParam.split(",").filter(Boolean) : cart.items.map((i) => `${i.productId}-${i.colorId}`);
+  // The cart sends keys as `productId-colorId-size`; older links used `productId-colorId`.
+  // Accept both so "Proceed to Checkout" never lands on an empty page.
+  const wantedKeys = useMemo(
+    () => (itemsParam ? new Set(itemsParam.split(",").filter(Boolean)) : null),
+    [itemsParam]
+  );
 
   const rows = useMemo<CheckoutRow[]>(() => {
     const result: CheckoutRow[] = [];
     for (const item of cart.items) {
-      const key = `${item.productId}-${item.colorId}`;
-      if (!selectedKeys.includes(key)) continue;
+      if (wantedKeys) {
+        const withSize = `${item.productId}-${item.colorId}-${item.size || ""}`;
+        const withoutSize = `${item.productId}-${item.colorId}`;
+        if (!wantedKeys.has(withSize) && !wantedKeys.has(withoutSize)) continue;
+      }
       if (item.isLive && item.liveSnapshot) {
         result.push({ productId: item.productId, colorId: item.colorId, size: item.size, quantity: item.quantity, price: item.liveSnapshot.price, title: item.liveSnapshot.title, image: item.liveSnapshot.image, isLive: true });
         continue;
@@ -93,7 +101,7 @@ function CheckoutContent() {
       result.push({ productId: product.id, colorId: item.colorId, size: item.size, quantity: item.quantity, price: product.price, title: product.title, image: product.image, isLive: false });
     }
     return result;
-  }, [cart.items, selectedKeys.join(","), products]);
+  }, [cart.items, wantedKeys, products]);
 
   const subtotal = rows.reduce((sum, r) => sum + r.price * r.quantity, 0);
   const servicesTotal = selectedServices.reduce((sum, s) => sum + s.price, 0);
@@ -178,7 +186,7 @@ function CheckoutContent() {
 
   return (
     <>
-      <div className="min-h-screen bg-[#FFF6F6] pb-28 md:pb-8">
+      <div className="min-h-screen bg-[#FFF6F6] pb-64 lg:pb-8">
         <div className="sticky top-[56px] z-40 border-b border-[#FAD4DD] bg-white shadow-sm md:top-[60px]">
           <div className="mx-auto flex max-w-[1400px] items-center gap-3 px-4 py-3">
             <Link href="/cart" className="flex h-8 w-8 items-center justify-center text-[#2B1A24] hover:text-[#E8546B]">
@@ -407,7 +415,7 @@ function CheckoutContent() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#FAD4DD] bg-white p-3 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.05)] lg:hidden">
+      <div className="fixed bottom-[calc(94px+env(safe-area-inset-bottom))] left-0 right-0 z-40 rounded-t-2xl border-t border-[#FAD4DD] bg-white p-3 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] lg:hidden">
         <div className="flex gap-2">
           {step > 1 && (
             <button onClick={() => handleStepClick(step - 1)} disabled={placing} className="flex h-12 w-[30%] items-center justify-center rounded-xl border-2 border-[#FAD4DD] bg-white text-sm font-bold text-[#6B5558]">

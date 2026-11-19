@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatBDT } from "@/lib/data";
+import { imgSrc } from "@/lib/img";
 import { useProducts } from "@/lib/ProductsContext";
 import { useCart } from "@/lib/CartContext";
 
@@ -71,7 +72,7 @@ export default function CartPage() {
       {/* ============================================================
           📱 MOBILE VIEW (Matches Figma exactly)
           ============================================================ */}
-      <div className="md:hidden min-h-screen bg-[#FFF6F6] pb-32">
+      <div className="lg:hidden min-h-screen bg-[#FFF6F6] pb-64">
         {/* Header */}
         <div className="sticky top-14 z-40 bg-white/95 backdrop-blur-md px-4 py-3 flex items-center gap-3 border-b border-[#FAD4DD]/50">
           <button onClick={() => router.back()} className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FFF6F6] text-[#2B1A24]">
@@ -109,7 +110,14 @@ export default function CartPage() {
                   <div className="flex justify-between items-start">
                     <Link href={row.href} className="pr-2">
                       <h3 className="text-[13px] font-bold text-[#2B1A24] leading-tight line-clamp-2">{row.title}</h3>
-                      <p className="text-[10px] font-medium text-[#6B5558] mt-1">{row.colorLabel && `Color: ${row.colorLabel}`}</p>
+                      <div className="mt-1 flex flex-wrap items-center gap-1">
+                        {row.colorLabel && row.colorLabel !== "Default" && (
+                          <span className="rounded bg-[#FFF6F6] px-1.5 py-0.5 text-[10px] font-medium text-[#6B5558]">Color: {row.colorLabel}</span>
+                        )}
+                        {row.size && row.size !== "One Size" && (
+                          <span className="rounded bg-[#FFF6F6] px-1.5 py-0.5 text-[10px] font-medium text-[#6B5558]">Size: {row.size}</span>
+                        )}
+                      </div>
                     </Link>
                     <button onClick={() => cart.remove(row.productId, row.colorId, row.size)} className="text-[#A88F92]">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
@@ -130,8 +138,8 @@ export default function CartPage() {
           })}
         </div>
 
-        {/* Sticky Bottom Bar */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-[#FAD4DD] p-4 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.05)] max-w-[430px] mx-auto">
+        {/* Sticky Bottom Bar — sits ABOVE the floating bottom nav */}
+        <div className="fixed bottom-[calc(94px+env(safe-area-inset-bottom))] left-0 right-0 z-40 mx-auto max-w-[430px] rounded-t-2xl border-t border-[#FAD4DD] bg-white p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[13px] font-medium text-[#6B5558]">Subtotal</span>
             <span className="text-lg font-bold text-[#E4216F]">{formatBDT(subtotal)}</span>
@@ -145,7 +153,7 @@ export default function CartPage() {
       {/* ============================================================
           💻 DESKTOP VIEW (100% UNCHANGED)
           ============================================================ */}
-      <div className="hidden md:block min-h-screen bg-[#FFF6F6] pb-48">
+      <div className="hidden lg:block min-h-screen bg-[#FFF6F6] pb-48">
         <CartTopBar count={cartRows.length} onClear={() => cart.clear()} />
         <div className="sticky top-[56px] z-30 border-b border-[#FAD4DD] bg-white px-4 py-3 shadow-sm md:top-[60px]">
           <div className="mx-auto flex max-w-[1400px] items-center gap-3">
@@ -208,7 +216,7 @@ export default function CartPage() {
 function CartImage({ src }: { src: string }) {
   const [failed, setFailed] = useState(false);
   if (!src || failed) return <span className="text-3xl">🎁</span>;
-  return <img src={src} alt="" referrerPolicy="no-referrer" className="h-full w-full object-contain mix-blend-multiply" onError={() => setFailed(true)} />;
+  return <img src={imgSrc(src)} alt="" referrerPolicy="no-referrer" className="h-full w-full object-contain mix-blend-multiply" onError={() => setFailed(true)} />;
 }
 
 function CartTopBar({ count, onClear }: { count: number; onClear?: () => void }) {

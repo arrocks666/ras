@@ -11,14 +11,10 @@ export default function MobileBottomNav() {
   const pathname = usePathname();
   const cart = useCart();
 
-  // The cart and checkout pages have their own sticky action bar at the bottom.
-  // Showing the floating nav there would cover the subtotal / Place Order button.
-  if (pathname === "/cart" || pathname === "/checkout") return null;
-
   const active = (path: string) => pathname === path;
 
   return (
-    <div className="pointer-events-none fixed bottom-0 left-0 right-0 z-50 block pb-safe md:hidden">
+    <div className="pointer-events-none fixed bottom-0 left-0 right-0 z-50 block pb-safe lg:hidden">
       <div className="pointer-events-auto mx-auto w-full max-w-[430px] px-3 pb-2">
         <div className="relative flex h-[62px] items-center rounded-[28px] border border-[#F7C9DB] bg-gradient-to-b from-white to-[#FFF0F6] px-1 shadow-[0_12px_30px_-10px_rgba(228,33,111,0.55)]">
           <Link href="/" className="relative z-10 flex flex-1 flex-col items-center justify-center gap-1">
