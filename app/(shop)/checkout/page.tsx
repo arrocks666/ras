@@ -4,6 +4,7 @@ import { useState, useMemo, Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { formatBDT } from "@/lib/data";
+import { imgSrc } from "@/lib/img";
 import { useProducts } from "@/lib/ProductsContext";
 import { useCart } from "@/lib/CartContext";
 import { useOrders, OrderService } from "@/lib/OrderContext";
@@ -32,7 +33,7 @@ const PAYMENT_METHODS = [
 function CheckoutImage({ src }: { src: string }) {
   const [failed, setFailed] = useState(false);
   if (!src || failed) return <span className="text-xl">🎁</span>;
-  return <img src={src} alt="" referrerPolicy="no-referrer" className="max-h-full max-w-full object-contain" onError={() => setFailed(true)} />;
+  return <img src={imgSrc(src)} alt="" referrerPolicy="no-referrer" className="max-h-full max-w-full object-contain" onError={() => setFailed(true)} />;
 }
 
 type CheckoutRow = {
@@ -142,6 +143,7 @@ function CheckoutContent() {
   };
 
   const handlePlaceOrder = async () => {
+    // Login is required to place an order.
     if (!user) { setLoginPromptOpen(true); return; }
     if (!validateStep1() || !validateStep2() || rows.length === 0) return;
     setPlacing(true); setError(null);
@@ -196,6 +198,18 @@ function CheckoutContent() {
 
         <div className="mx-auto max-w-3xl px-3 py-4 md:px-4 md:py-6">
           
+          {!user && (
+            <div className="mb-4 flex items-center gap-3 rounded-2xl border border-[#E8546B]/40 bg-[#FFF6F6] px-4 py-3">
+              <span className="text-lg">🔒</span>
+              <p className="flex-1 text-[12.5px] font-semibold leading-snug text-[#2B1A24]">
+                You have to login to place an order.
+              </p>
+              <Link href="/login" className="flex-shrink-0 rounded-full bg-[#E8546B] px-4 py-1.5 text-[11px] font-bold text-white">
+                Login
+              </Link>
+            </div>
+          )}
+
           {step === 1 && (
             <div className="rounded-3xl border border-[#FAD4DD] bg-white p-5 shadow-soft animate-fade-in">
               <h2 className="mb-5 text-lg font-bold text-[#2B1A24]">Delivery Address</h2>
@@ -383,7 +397,7 @@ function CheckoutContent() {
           )}
         </div>
 
-        <div className="hidden md:flex mx-auto max-w-3xl px-4 pb-10 gap-3">
+        <div className="hidden lg:flex mx-auto max-w-3xl px-4 pb-10 gap-3">
           {step > 1 && <button onClick={() => handleStepClick(step - 1)} disabled={placing} className="flex-1 rounded-xl border-2 border-[#FAD4DD] bg-white py-3.5 text-sm font-bold text-[#6B5558] hover:bg-gray-50">Back</button>}
           {step < 3 ? (
             <button onClick={() => handleStepClick(step + 1)} className="flex-[2] rounded-xl bg-[#E8546B] py-3.5 text-sm font-bold text-white shadow-glow hover:bg-[#b02a58]">Continue</button>
@@ -393,7 +407,7 @@ function CheckoutContent() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#FAD4DD] bg-white p-3 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.05)] md:hidden">
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#FAD4DD] bg-white p-3 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.05)] lg:hidden">
         <div className="flex gap-2">
           {step > 1 && (
             <button onClick={() => handleStepClick(step - 1)} disabled={placing} className="flex h-12 w-[30%] items-center justify-center rounded-xl border-2 border-[#FAD4DD] bg-white text-sm font-bold text-[#6B5558]">
@@ -417,7 +431,7 @@ function CheckoutContent() {
         </div>
       </div>
 
-      <LoginPromptModal open={loginPromptOpen} onClose={() => setLoginPromptOpen(false)} title="Login to place order" message="Please login or create an account to place your order. Your cart will be saved." />
+      <LoginPromptModal open={loginPromptOpen} onClose={() => setLoginPromptOpen(false)} title="Login required" message="You have to login to place an order. Your cart is saved — login and come right back here." />
     </>
   );
 }

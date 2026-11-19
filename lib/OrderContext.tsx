@@ -20,7 +20,7 @@ import {
   setDoc,
 } from "firebase/firestore";
 import { db, auth } from "./firebase";
-import { sendOrderEmail } from "./sendEmail"; // We will create this later
+import { sendOrderEmail } from "./sendEmail";
 
 export type OrderStatus =
   | "placed" | "confirmed" | "processing" | "shipped" | "arrived" | "out-for-delivery" | "delivered";
@@ -111,7 +111,8 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
   const addOrder = async (draft: Omit<Order, "id" | "createdAt" | "status" | "userId" | "userPhone">): Promise<Order> => {
     const user = auth.currentUser;
-    if (!user) throw new Error("Must be logged in to place an order");
+    // Login is required to place an order.
+    if (!user) throw new Error("Please login to place your order.");
 
     const orderId = await generateUniqueOrderId();
     const ref = doc(db, "orders", orderId);

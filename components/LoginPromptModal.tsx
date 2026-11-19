@@ -53,7 +53,7 @@ export default function LoginPromptModal({
             onClick={onClose}
             className="block w-full py-2 text-center text-xs font-medium text-[#6B5558] hover:text-[#2B1A24]"
           >
-            Continue as Guest
+            Cancel
           </button>
         </div>
       </div>

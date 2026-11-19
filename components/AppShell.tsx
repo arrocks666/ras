@@ -9,6 +9,7 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith("/control-room");
+  const ownsBottomBar = pathname === "/cart" || pathname === "/checkout";
 
   if (isAdmin) {
     return <main className="flex-1">{children}</main>;
@@ -27,6 +28,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <main className="flex-1">{children}</main>
 
       <Footer />
+
+      {/* keeps the last row of the footer above the floating bottom nav */}
+      {!ownsBottomBar && <div aria-hidden className="h-[78px] md:hidden" />}
 
       <MobileBottomNav />
     </>
