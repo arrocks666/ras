@@ -1,8 +1,8 @@
 // lib/img.ts
 // Chinese CDNs (alicdn / 1688 / taobao) block hotlinking: the browser sends a
 // Referer from our own site, the CDN answers 403 and the picture never shows.
-// Every image from those hosts is rewritten to /api/img, which re-fetches the
-// file server-side with the right Referer and serves it from our own origin.
+// Every image from those hosts is rewritten to /api/img/<hex>, which re-fetches
+// the file server-side with the right Referer and serves it from our own origin.
 
 const PROXIED_HOSTS = [
   "alicdn.com",
@@ -24,10 +24,20 @@ export function isProxiedHost(url: string): boolean {
   }
 }
 
+/** UTF-8 URL -> lowercase hex string (0-9a-f only, nothing to mangle) */
+function encodeKey(url: string): string {
+  const bytes = new TextEncoder().encode(url);
+  let hex = "";
+  for (let i = 0; i < bytes.length; i++) {
+    hex += bytes[i].toString(16).padStart(2, "0");
+  }
+  return hex;
+}
+
 /**
  * Returns a browser-safe src for any product image.
  * - local paths, data: and blob: URLs are returned untouched
- * - hotlink-protected Chinese hosts are routed through /api/img
+ * - hotlink-protected Chinese hosts are routed through /api/img/<hex>
  * - everything else (imgbb, unsplash, firebase storage...) is returned as-is
  */
 export function imgSrc(url?: string | null, fallback = ""): string {
@@ -49,7 +59,7 @@ export function imgSrc(url?: string | null, fallback = ""): string {
     const parsed = new URL(normalized);
     if (parsed.protocol === "http:") parsed.protocol = "https:";
     if (isProxiedHost(parsed.toString())) {
-      return `/api/img?u=${encodeURIComponent(parsed.toString())}`;
+      return `/api/img/${encodeKey(parsed.toString())}`;
     }
     return parsed.toString();
   } catch {
