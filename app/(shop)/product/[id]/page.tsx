@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { formatBDT } from "@/lib/data";
+import { imgSrc } from "@/lib/img";
 import { useCart } from "@/lib/CartContext";
 import { 
   loadSettings, 
@@ -72,15 +73,20 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     load();
   }, [id]);
 
+  // PRICE RULE: the price set in the Control Room always wins.
+  // Variants only provide a fallback when the product has no base price at all.
   useEffect(() => {
-    if (!product || !product.variants || product.variants.length === 0) return;
-    const matchedVariant = product.variants.find((v: any) => {
-      const matchesColor = !selectedColor || v.colorId === selectedColor.label || v.colorId === selectedColor.id || selectedColor.label === "Default";
-      const matchesSize = !selectedSize || v.size === selectedSize || selectedSize === "One Size";
-      return matchesColor && matchesSize;
-    });
-    if (matchedVariant && matchedVariant.price && matchedVariant.price > 0) setCurrentPrice(matchedVariant.price);
-    else setCurrentPrice(product.price);
+    if (!product) return;
+    const base = Number(product.price) || 0;
+    const variant = Array.isArray(product.variants) && product.variants.length > 0
+      ? product.variants.find((v: any) => {
+          const matchesColor = !selectedColor || v.colorId === selectedColor.label || v.colorId === selectedColor.id || selectedColor.label === "Default";
+          const matchesSize = !selectedSize || v.size === selectedSize || selectedSize === "One Size";
+          return matchesColor && matchesSize;
+        })
+      : undefined;
+    const variantPrice = Number(variant?.price) || 0;
+    setCurrentPrice(base > 0 ? base : variantPrice);
   }, [selectedColor, selectedSize, product]);
 
   const handleSelectColor = (c: any) => {
@@ -120,9 +126,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         console.log("Error sharing:", err);
       }
     } else {
-      navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      try {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        window.prompt("Copy this link", url);
+      }
     }
   };
 
@@ -162,7 +172,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
         {/* Image Gallery */}
         <div className="relative w-full aspect-square bg-[#F9F9F9]">
-          <img src={selectedImage} alt={product.title} className="w-full h-full object-cover" />
+          <img src={imgSrc(selectedImage)} alt={product.title} className="w-full h-full object-contain" />
           {discountPercent > 0 && (
             <span className="absolute top-4 left-4 rounded-full bg-[#E4216F] px-2.5 py-1 text-xs font-bold text-white shadow-sm">
               -{discountPercent}%
@@ -173,7 +183,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           <div className="flex gap-2 overflow-x-auto px-4 py-3 hide-scrollbar">
             {product.gallery.map((img: string, i: number) => (
               <button key={i} onClick={() => setSelectedImage(img)} className={`h-14 w-14 flex-shrink-0 rounded-lg border-2 overflow-hidden bg-white p-0.5 ${selectedImage === img ? "border-[#E4216F]" : "border-transparent opacity-60"}`}>
-                <img src={img} alt="" className="w-full h-full object-cover rounded-md" />
+                <img src={imgSrc(img)} alt="" className="w-full h-full object-cover rounded-md" />
               </button>
             ))}
           </div>
@@ -204,13 +214,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <p className="text-[13px] font-bold text-[#2B1A24] mb-2">Color: <span className="font-normal text-[#6B5558]">{cleanLabel(selectedColor?.label)}</span></p>
               <div className="grid grid-cols-5 gap-2">
                 {colorsArray.map((c: any, idx: number) => {
-                  const imgSrc = c.image || product.image;
+                  const colorImg = c.image || product.image;
                   const isActive = selectedColor?.label === c.label;
                   return (
                     <button key={idx} onClick={() => handleSelectColor(c)} className={`w-full flex flex-col items-center gap-1 rounded-lg border-2 p-1 transition ${isActive ? "border-[#E4216F] bg-[#FFF0F5]" : "border-gray-200 bg-white"}`} title={cleanLabel(c.label)}>
                       <div className="w-full aspect-square rounded-md overflow-hidden bg-white">
-                        {imgSrc ? (
-                          <img src={imgSrc} className="w-full h-full object-cover" />
+                        {colorImg ? (
+                          <img src={imgSrc(colorImg)} alt={c.label} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full" style={{ backgroundColor: c.hex || "#E4216F" }} />
                         )}
@@ -323,7 +333,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             <div className="lg:col-span-5">
               <div className="lg:sticky lg:top-24">
                 <div className="relative w-full aspect-square max-h-[550px] rounded-2xl bg-white border border-[#FAD4DD] overflow-hidden flex items-center justify-center p-4 mx-auto">
-                  <img src={selectedImage} alt={product.title} className="w-full h-full object-contain mix-blend-multiply" />
+                  <img src={imgSrc(selectedImage)} alt={product.title} className="w-full h-full object-contain mix-blend-multiply" />
                   {discountPercent > 0 && (
                     <span className="absolute top-4 left-4 rounded-full bg-[#E8546B] px-3 py-1 text-xs font-bold text-white">{discountPercent}% OFF</span>
                   )}
@@ -332,7 +342,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
                     {product.gallery.map((img: string, i: number) => (
                       <button key={i} onClick={() => setSelectedImage(img)} className={`h-16 w-16 flex-shrink-0 rounded-xl border-2 overflow-hidden bg-white p-1 transition ${selectedImage === img ? "border-[#E8546B]" : "border-[#FAD4DD]"}`}>
-                        <img src={img} alt="" className="w-full h-full object-contain mix-blend-multiply" />
+                        <img src={imgSrc(img)} alt="" className="w-full h-full object-contain mix-blend-multiply" />
                       </button>
                     ))}
                   </div>
@@ -369,12 +379,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   <p className="text-sm font-bold text-[#2B1A24] mb-3">Color: <span className="font-normal text-[#6B5558]">{cleanLabel(selectedColor?.label)}</span></p>
                   <div className="flex flex-wrap gap-3">
                     {colorsArray.map((c: any, idx: number) => {
-                      const imgSrc = c.image || product.image;
+                      const colorImg = c.image || product.image;
                       const isActive = selectedColor?.label === c.label;
                       return (
                         <button key={idx} onClick={() => handleSelectColor(c)} className={`flex flex-col items-center gap-2 rounded-xl border-2 p-2 transition min-w-[70px] ${isActive ? "border-[#E8546B] bg-[#FFF6F6] shadow-sm" : "border-[#FAD4DD] bg-white hover:border-[#E8546B]"}`} title={cleanLabel(c.label)}>
                           <div className="h-14 w-14 rounded-lg bg-gray-50 overflow-hidden">
-                            {imgSrc ? <img src={imgSrc} alt={c.label} className="h-full w-full object-cover" /> : <div className="h-full w-full" style={{ backgroundColor: c.hex || "#E8546B" }} />}
+                            {colorImg ? <img src={imgSrc(colorImg)} alt={c.label} className="h-full w-full object-cover" /> : <div className="h-full w-full" style={{ backgroundColor: c.hex || "#E8546B" }} />}
                           </div>
                           <span className={`text-[11px] font-medium max-w-[80px] truncate ${isActive ? "text-[#E8546B]" : "text-[#6B5558]"}`}>{cleanLabel(c.label)}</span>
                         </button>

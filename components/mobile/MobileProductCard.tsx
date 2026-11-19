@@ -5,12 +5,14 @@ import Link from "next/link";
 import { useCart } from "@/lib/CartContext";
 import { useWishlist } from "@/lib/WishlistContext";
 import { formatBDT } from "@/lib/data";
+import { imgSrc } from "@/lib/img";
 import type { Product } from "@/lib/ProductsContext";
 
 export default function MobileProductCard({ product }: { product: Product }) {
   const cart = useCart();
   const wishlist = useWishlist();
   const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
+  const [src, setSrc] = useState(() => imgSrc(product.image));
 
   const saved = wishlist.has(product.id);
   const price = product.price ?? 0;
@@ -30,6 +32,14 @@ export default function MobileProductCard({ product }: { product: Product }) {
     wishlist.toggle(product.id);
   };
 
+  const handleImgError = () => {
+    if (product.image && src !== product.image) {
+      setSrc(product.image);
+      return;
+    }
+    setStatus("error");
+  };
+
   return (
     <Link
       href={`/product/${product.id}`}
@@ -41,13 +51,16 @@ export default function MobileProductCard({ product }: { product: Product }) {
 
         {product.image && status !== "error" ? (
           <img
-            src={product.image}
-            alt=""
+            src={src}
+            alt={product.title}
+            loading="eager"
+            decoding="async"
+            referrerPolicy="no-referrer"
             className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
               status === "loaded" ? "opacity-100" : "opacity-0"
             }`}
             onLoad={() => setStatus("loaded")}
-            onError={() => setStatus("error")}
+            onError={handleImgError}
           />
         ) : (
           status === "error" && (

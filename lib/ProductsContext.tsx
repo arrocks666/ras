@@ -10,6 +10,7 @@ import {
 } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "./firebase";
+import { imgSrc } from "./img";
 
 export type Product = {
   id: string;
@@ -65,12 +66,17 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
       const snap = await getDocs(collection(db, "products"));
       const list: Product[] = snap.docs.map((d) => {
         const data = d.data() as Omit<Product, "id">;
+        const colors = Array.isArray(data.colors) ? data.colors : [];
         return {
           ...data,
           id: d.id,
-          colors: Array.isArray(data.colors) ? data.colors : [],
+          // every picture goes through our own origin when the source CDN blocks hotlinking
+          image: imgSrc(data.image),
+          gallery: Array.isArray(data.gallery) ? data.gallery.map((g) => imgSrc(g)) : [],
+          colors: colors.map((c: any) =>
+            c && typeof c === "object" ? { ...c, image: c.image ? imgSrc(c.image) : c.image } : c
+          ),
           sizes: Array.isArray(data.sizes) ? data.sizes : [],
-          gallery: Array.isArray(data.gallery) ? data.gallery : [],
         };
       });
       list.sort((a, b) => {
