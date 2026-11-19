@@ -41,16 +41,16 @@ export default function HomePage() {
   return (
     <>
       {/* ============================================================
-          📱 MOBILE (below 768px)
+          📱 MOBILE + TABLET (below 1024px)
           ============================================================ */}
-      <div className="md:hidden">
+      <div className="lg:hidden">
         <MobileHome />
       </div>
 
       {/* ============================================================
-          💻 DESKTOP (768px and up)
+          💻 DESKTOP (1024px and up)
           ============================================================ */}
-      <div className="hidden md:block">
+      <div className="hidden lg:block">
         <div className="min-h-screen bg-[#FFF6F6] flex flex-col">
           <HeroBanner />
 

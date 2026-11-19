@@ -37,7 +37,7 @@ export default function MobileHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-[#F9D9E5] bg-gradient-to-b from-[#FFF7FA] to-[#FFEAF2] px-4 md:hidden">
+      <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-[#F9D9E5] bg-gradient-to-b from-[#FFF7FA] to-[#FFEAF2] px-4 lg:hidden">
         {/* LEFT: 3 lines */}
         <button
           onClick={() => setMenuOpen(true)}
@@ -102,7 +102,7 @@ export default function MobileHeader() {
       </header>
 
       {menuOpen && (
-        <div className="fixed inset-0 z-[100] flex md:hidden">
+        <div className="fixed inset-0 z-[100] flex lg:hidden">
           <div
             className="absolute inset-0 animate-fade-in bg-[#3B1024]/40 backdrop-blur-sm"
             onClick={() => setMenuOpen(false)}

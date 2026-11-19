@@ -24,7 +24,7 @@ export const CATEGORIES: Category[] = [
     icon: "👗",
     image: U("photo-1490481651871-ab68de25d43d"),
     subcategories: [
-      { name: "Tops & Blouses", slug: "tops", image: U("photo-1564257631407-4deb1f99d992") },
+      { name: "Tops", slug: "tops", image: U("photo-1564257631407-4deb1f99d992") },
       { name: "Dresses", slug: "dresses", image: U("photo-1595777457583-95e059d581b8") },
       { name: "Jeans & Trousers", slug: "jeans", image: U("photo-1541099649105-f69ad21f3246") },
       { name: "Skirts", slug: "skirts", image: U("photo-1583496661160-fb5886a0aaaa") },

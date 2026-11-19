@@ -4,6 +4,64 @@ import { useState, useRef } from "react";
 import { doc, setDoc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { CATEGORIES } from "@/lib/categories";
+import { imgSrc, needsImgbbMigration } from "@/lib/img";
+
+/** Uploads every remote 1688 image of a product to ImgBB in one request. */
+async function rehostImages(product: any): Promise<{ map: Record<string, string>; failed: number }> {
+  const sources = new Set<string>();
+  const collect = (u?: string | null) => {
+    if (u && needsImgbbMigration(u)) sources.add(u);
+  };
+
+  collect(product?.image);
+  (product?.gallery || []).forEach((g: string) => collect(g));
+  (product?.colors || []).forEach((c: any) => collect(c?.image));
+  (product?.variants || []).forEach((v: any) => collect(v?.image));
+
+  const list = Array.from(sources);
+  const map: Record<string, string> = {};
+  let failed = 0;
+
+  for (let i = 0; i < list.length; i += 12) {
+    const chunk = list.slice(i, i + 12);
+    try {
+      const res = await fetch("/api/upload-proxy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrls: chunk }),
+      });
+      const data = await res.json();
+      for (const r of data?.results || []) {
+        if (r?.url) map[r.source] = r.url;
+        else failed++;
+      }
+    } catch {
+      failed += chunk.length;
+    }
+  }
+
+  return { map, failed };
+}
+
+function SearchThumb({ src, alt }: { src?: string; alt: string }) {
+  const [tried, setTried] = useState(0);
+  if (!src || tried > 1) {
+    return <span className="flex h-full w-full items-center justify-center text-2xl">💍</span>;
+  }
+  const url = tried === 0 ? imgSrc(src) : src;
+  return (
+    <img
+      src={url}
+      alt={alt}
+      referrerPolicy="no-referrer"
+      className="h-full w-full object-contain"
+      onError={() => {
+        console.warn("[image-search] could not load", url, "→ trying fallback");
+        setTried((t) => t + 1);
+      }}
+    />
+  );
+}
 
 export default function ImageSearchModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [file, setFile] = useState<File | null>(null);
@@ -94,37 +152,44 @@ export default function ImageSearchModal({ isOpen, onClose }: { isOpen: boolean;
       const subName = cat?.subcategories.find(s => s.slug === selectedSub)?.name;
 
       const docRef = doc(collection(db, "products"));
-      const finalPrice = editedPrices[product.id] || product.price;
+      const finalPrice = Number(editedPrices[product.id] || product.price) || 0;
 
-      // ✅ Re-upload image to our own server (or ImgBB) to fix broken images
-      let finalImageUrl = product.image;
-      if (product.image && product.image.includes("alicdn.com")) {
-        try {
-          const imgRes = await fetch("/api/upload-proxy", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ imageUrl: product.image })
-          });
-          const imgData = await imgRes.json();
-          if (imgData.url) finalImageUrl = imgData.url;
-        } catch (e) {
-          console.warn("Image proxy failed, using original", e);
-        }
-      }
+      // Re-host every 1688 image on ImgBB so the picture never breaks again
+      setStatus("Uploading pictures to ImgBB...");
+      const { map, failed } = await rehostImages(product);
+      const fix = (u?: string | null) => (u && map[u] ? map[u] : u);
+
+      // Scale every variant by the same % as the price you typed above.
+      const baseFromSource = Number(product.price) || 0;
+      const scaledVariants = (product.variants || []).map((v: any) => {
+        const vp = Number(v?.price) || 0;
+        const scaled =
+          baseFromSource > 0 && vp > 0 ? Math.round((vp * finalPrice) / baseFromSource) : finalPrice;
+        return { ...v, price: scaled };
+      });
 
       const productToSave = {
         ...product,
         id: docRef.id,
-        image: finalImageUrl,
+        image: fix(product.image),
+        gallery: (product.gallery || []).map((g: string) => fix(g)),
+        colors: (product.colors || []).map((c: any) => ({ ...c, image: fix(c.image) })),
+        variants: scaledVariants,
         price: finalPrice,
+        priceMax: finalPrice,
         categoryId: selectedCat,
         subcategoryId: selectedSub,
         subcategory: subName,
         savedAt: Date.now(),
-        isLive: true
+        isLive: true,
       };
 
       await setDoc(docRef, productToSave);
+      setStatus(
+        failed > 0
+          ? `Saved. ${failed} picture(s) could not be uploaded — they still load through /api/img.`
+          : "Saved with pictures on ImgBB."
+      );
       setResults(prev => prev.filter(p => p.id !== product.id));
     } catch (err) {
       console.error(err);
@@ -214,7 +279,9 @@ export default function ImageSearchModal({ isOpen, onClose }: { isOpen: boolean;
               <div className="space-y-3">
                 {results.map((product) => (
                   <div key={product.id} className="flex flex-col sm:flex-row gap-4 p-3 border border-[#FAD4DD] rounded-xl bg-white shadow-sm">
-                    <img src={product.image} className="w-20 h-20 object-contain bg-[#FFF6F6] rounded-lg border border-[#FAD4DD] p-1 shrink-0" />
+                    <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#FAD4DD] bg-[#FFF6F6] p-1">
+                      <SearchThumb src={product.image} alt={product.title} />
+                    </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-[#2B1A24] line-clamp-2">{product.title}</p>
                       <p className="text-[10px] text-gray-500 mt-1 mb-2">Supplier: {product.supplierName || "1688"}</p>

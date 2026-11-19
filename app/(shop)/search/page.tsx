@@ -164,7 +164,7 @@ function SearchContent() {
       <div className="mx-auto max-w-[1400px] px-4">
         <div className="flex flex-col md:flex-row gap-6 items-start">
           {!isImageSearch && (
-            <aside className="hidden md:block w-[280px] shrink-0">
+            <aside className="hidden lg:block w-[280px] shrink-0">
               <div className="sticky top-24 space-y-4">
                 <div className="bg-white rounded-2xl border border-[#FAD4DD] p-5 shadow-sm">
                   <div className="mb-4">
@@ -235,7 +235,7 @@ function SearchContent() {
 
           <div className="flex-1 min-w-0">
             {!isImageSearch && (
-              <div className="md:hidden mb-3 flex justify-start">
+              <div className="lg:hidden mb-3 flex justify-start">
                 <button onClick={() => setMobileFilterOpen(true)} className="flex items-center gap-2 rounded-full border border-[#FAD4DD] bg-white px-4 py-2 text-sm font-bold text-[#2B1A24] shadow-sm">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
                   Filters
@@ -269,7 +269,7 @@ function SearchContent() {
       </div>
 
       {mobileFilterOpen && (
-        <div className="fixed inset-0 z-[100] flex md:hidden">
+        <div className="fixed inset-0 z-[100] flex lg:hidden">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setMobileFilterOpen(false)} />
           <div className="absolute bottom-0 left-0 right-0 rounded-t-3xl bg-white p-6 shadow-2xl animate-fade-up max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">

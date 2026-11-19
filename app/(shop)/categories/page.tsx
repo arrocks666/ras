@@ -18,9 +18,9 @@ export default function CategoriesPage() {
   return (
     <>
       {/* ============================================================
-          📱 MOBILE VIEW
+          📱 MOBILE + TABLET VIEW (below 1024px)
           ============================================================ */}
-      <div className="md:hidden min-h-screen bg-[#FFF6F6] pb-24">
+      <div className="lg:hidden min-h-screen bg-[#FFF6F6] pb-24">
         {/* Search Header */}
         <div className="sticky top-14 z-40 bg-[#FFF6F6] pt-4 pb-2 px-4 shadow-sm">
           <div className="relative">
@@ -79,9 +79,9 @@ export default function CategoriesPage() {
       </div>
 
       {/* ============================================================
-          💻 DESKTOP VIEW (100% UNCHANGED)
+          💻 DESKTOP VIEW (1024px and up — unchanged)
           ============================================================ */}
-      <div className="hidden md:block min-h-screen bg-[#FFF6F6] pb-24">
+      <div className="hidden lg:block min-h-screen bg-[#FFF6F6] pb-24">
         <div className="sticky top-[60px] z-40 bg-white/95 backdrop-blur-md border-b border-[#FAD4DD]/50">
           <div className="flex items-center gap-4 px-4 py-4">
             <button onClick={() => router.back()} className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FFF6F6] text-[#2B1A24]">

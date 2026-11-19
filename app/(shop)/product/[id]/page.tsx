@@ -155,9 +155,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   return (
     <>
       {/* ============================================================
-          📱 MOBILE VIEW
+          📱 MOBILE + TABLET VIEW (below 1024px)
           ============================================================ */}
-      <div className="md:hidden min-h-screen bg-white pb-32">
+      <div className="lg:hidden min-h-screen bg-white pb-32">
         {/* Mobile Header / Breadcrumb */}
         <div className="sticky top-14 z-40 bg-white/95 backdrop-blur-md px-4 py-3 flex items-center gap-3 border-b border-[#FAD4DD]/50">
           <button onClick={() => router.back()} className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FFF6F6] text-[#2B1A24]">
@@ -317,9 +317,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       </div>
 
       {/* ============================================================
-          💻 DESKTOP VIEW (100% UNCHANGED)
+          💻 DESKTOP VIEW (1024px and up — unchanged)
           ============================================================ */}
-      <div className="hidden md:block min-h-screen bg-[#FFF6F6] pb-20">
+      <div className="hidden lg:block min-h-screen bg-[#FFF6F6] pb-20">
         <div className="mx-auto max-w-[1400px] px-4 py-4 text-xs text-[#6B5558] flex items-center gap-2">
           <Link href="/" className="hover:text-[#E8546B]">Home</Link>
           <span>/</span>
