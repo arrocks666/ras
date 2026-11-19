@@ -53,7 +53,7 @@ export default function ProductCard({ product }: { product: Product }) {
           <img
             src={src}
             alt={product.title}
-            loading="eager"
+            loading="lazy"
             decoding="async"
             referrerPolicy="no-referrer"
             className={`absolute inset-0 h-full w-full object-contain p-2 mix-blend-multiply transition-opacity duration-500 group-hover:scale-110 ${

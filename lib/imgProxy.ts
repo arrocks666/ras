@@ -128,6 +128,9 @@ export async function proxyImage(raw: string): Promise<Response> {
       "Content-Length": String(buffer.byteLength),
       "Cache-Control":
         "public, max-age=31536000, s-maxage=31536000, stale-while-revalidate=604800, immutable",
+      "CDN-Cache-Control": "public, max-age=31536000, stale-while-revalidate=604800",
+      "Netlify-CDN-Cache-Control":
+        "public, max-age=31536000, s-maxage=31536000, stale-while-revalidate=604800, durable",
       "X-Content-Type-Options": "nosniff",
     },
   });

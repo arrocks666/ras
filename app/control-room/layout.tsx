@@ -10,6 +10,7 @@ type NavItem = { href: string; label: string; icon: string; };
 const navItems: NavItem[] = [
   { href: "/control-room/dashboard", label: "Dashboard", icon: "📊" },
   { href: "/control-room/products", label: "Products", icon: "📦" },
+  { href: "/control-room/images", label: "Images", icon: "🖼️" },
   { href: "/control-room/orders", label: "Orders", icon: "🧾" },
   { href: "/control-room/users", label: "Customers", icon: "👥" },
   { href: "/control-room/coupons", label: "Coupons", icon: "🎟️" },

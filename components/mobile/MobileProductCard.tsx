@@ -53,7 +53,7 @@ export default function MobileProductCard({ product }: { product: Product }) {
           <img
             src={src}
             alt={product.title}
-            loading="eager"
+            loading="lazy"
             decoding="async"
             referrerPolicy="no-referrer"
             className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${
