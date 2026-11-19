@@ -90,8 +90,7 @@ export default function HelpPage() {
         <div className="rounded-3xl bg-gradient-to-r from-[#E8546B] to-[#FF8B9A] p-8 text-center shadow-lg mt-8">
           <h3 className="font-serif text-xl font-bold text-white mb-2">Still need help?</h3>
           <p className="text-white/90 text-sm mb-5">Our team is one message away.</p>
-          // Find line ~110 and update:
-         <a href="https://wa.me/8801689768307" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-[#E8546B] shadow-md hover:scale-105 transition-transform">
+         <a href="https://wa.me/8801879123735" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-[#E8546B] shadow-md hover:scale-105 transition-transform">
   💬 Chat on WhatsApp
          </a>
         </div>

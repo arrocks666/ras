@@ -16,14 +16,10 @@ export default function AddProductModal({ open, product, onClose, onAdded }: Pro
   const [categoryId, setCategoryId] = useState("");
   const [subcategory, setSubcategory] = useState("");
   const [isTrending, setIsTrending] = useState(false);
-  
-  // ✅ NEW: Availability State
   const [inStock, setInStock] = useState(true); 
-  
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // Reset state when modal opens
   useEffect(() => {
     if (open) {
       setCategoryId("");
@@ -46,11 +42,28 @@ export default function AddProductModal({ open, product, onClose, onAdded }: Pro
     setSaving(true);
     setError("");
     try {
+      // ✅ Re-upload image if it's from a Chinese CDN
+      let finalImageUrl = product.image;
+      if (product.image && product.image.includes("alicdn.com")) {
+        try {
+          const imgRes = await fetch("/api/upload-proxy", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ imageUrl: product.image })
+          });
+          const imgData = await imgRes.json();
+          if (imgData.url) finalImageUrl = imgData.url;
+        } catch (e) {
+          console.warn("Image proxy failed, using original", e);
+        }
+      }
+
+      const finalProduct = { ...product, image: finalImageUrl };
+
       const res = await fetch("/api/admin/add-product", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // ✅ We pass inStock to the backend
-        body: JSON.stringify({ product, categoryId, subcategory, isTrending, inStock }),
+        body: JSON.stringify({ product: finalProduct, categoryId, subcategory, isTrending, inStock }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -70,7 +83,6 @@ export default function AddProductModal({ open, product, onClose, onAdded }: Pro
       <div className="w-full max-w-lg rounded-2xl border border-[#FAD4DD] bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <h2 className="mb-4 text-xl font-bold text-[#2B1A24]">Add Product to Store</h2>
 
-        {/* Product Preview */}
         <div className="mb-4 flex gap-3 rounded-xl border border-[#FAD4DD] bg-[#FFF6F6] p-3">
           <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg border border-[#FAD4DD] bg-white p-1">
             <img src={product.image} alt="" className="h-full w-full object-contain mix-blend-multiply" />
@@ -81,7 +93,6 @@ export default function AddProductModal({ open, product, onClose, onAdded }: Pro
           </div>
         </div>
 
-        {/* Category */}
         <div className="mb-4">
           <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[#6B5558]">Category *</label>
           <select value={categoryId} onChange={(e) => { setCategoryId(e.target.value); setSubcategory(""); }} className="w-full rounded-lg border border-[#FAD4DD] bg-[#FFF6F6] px-4 py-2.5 text-sm focus:border-[#E8546B] focus:outline-none">
@@ -90,7 +101,6 @@ export default function AddProductModal({ open, product, onClose, onAdded }: Pro
           </select>
         </div>
 
-        {/* Subcategory (Fixed to use object.name) */}
         {selectedCategory && (
           <div className="mb-4">
             <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[#6B5558]">Subcategory</label>
@@ -103,28 +113,20 @@ export default function AddProductModal({ open, product, onClose, onAdded }: Pro
           </div>
         )}
 
-        {/* ✅ NEW: Availability Toggles */}
         <div className="mb-4">
           <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-[#6B5558]">Availability *</label>
           <div className="flex gap-3">
-            <button 
-              onClick={() => setInStock(true)}
-              className={`flex-1 rounded-lg border p-3 text-left transition-all ${inStock ? 'border-[#E8546B] bg-[#FFF6F6] ring-1 ring-[#E8546B]' : 'border-[#FAD4DD] bg-white'}`}
-            >
+            <button onClick={() => setInStock(true)} className={`flex-1 rounded-lg border p-3 text-left transition-all ${inStock ? 'border-[#E8546B] bg-[#FFF6F6] ring-1 ring-[#E8546B]' : 'border-[#FAD4DD] bg-white'}`}>
               <p className="text-sm font-bold text-[#2B1A24]">In Stock</p>
               <p className="text-[10px] text-[#6B5558]">Ready to ship</p>
             </button>
-            <button 
-              onClick={() => setInStock(false)}
-              className={`flex-1 rounded-lg border p-3 text-left transition-all ${!inStock ? 'border-[#E8546B] bg-[#FFF6F6] ring-1 ring-[#E8546B]' : 'border-[#FAD4DD] bg-white'}`}
-            >
+            <button onClick={() => setInStock(false)} className={`flex-1 rounded-lg border p-3 text-left transition-all ${!inStock ? 'border-[#E8546B] bg-[#FFF6F6] ring-1 ring-[#E8546B]' : 'border-[#FAD4DD] bg-white'}`}>
               <p className="text-sm font-bold text-[#2B1A24]">Pre-Order</p>
               <p className="text-[10px] text-[#6B5558]">Coming soon</p>
             </button>
           </div>
         </div>
 
-        {/* Popular Toggle */}
         <div className="mb-4 flex items-center gap-3 rounded-lg border border-[#FAD4DD] bg-[#FFF6F6] p-3">
           <input type="checkbox" checked={isTrending} onChange={(e) => setIsTrending(e.target.checked)} className="accent-[#E8546B] h-5 w-5" />
           <div>

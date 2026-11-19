@@ -8,10 +8,10 @@ import { CATEGORIES } from "@/lib/categories";
 export default function ImageSearchModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>("");
-  
+
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
-  
+
   const [results, setResults] = useState<any[]>([]);
   const [editedPrices, setEditedPrices] = useState<Record<string, number>>({});
   const [selectedCat, setSelectedCat] = useState(CATEGORIES[0]?.id ?? "");
@@ -34,17 +34,17 @@ export default function ImageSearchModal({ isOpen, onClose }: { isOpen: boolean;
   const handleSearch = async () => {
     if (!file) return;
     setLoading(true);
-    setStatus("Searching 1688 via Image...");
+    setStatus("Searching 1688 via Image... (This can take up to 2 minutes)");
     setResults([]);
 
     try {
       const formData = new FormData();
       formData.append("image", file);
-      
+
       const res = await fetch("/api/image-search", { method: "POST", body: formData });
       if (!res.ok) throw new Error("Search failed");
       const { jobId } = await res.json();
-      
+
       setStatus("Finding matches...");
 
       let attempts = 0;
@@ -57,10 +57,10 @@ export default function ImageSearchModal({ isOpen, onClose }: { isOpen: boolean;
             clearInterval(interval);
             setStatus("");
             setLoading(false);
-            
+
             const found = data.products.slice(0, 3);
             setResults(found);
-            
+
             const prices: Record<string, number> = {};
             found.forEach((p: any) => { prices[p.id] = p.price; });
             setEditedPrices(prices);
@@ -72,9 +72,10 @@ export default function ImageSearchModal({ isOpen, onClose }: { isOpen: boolean;
           }
 
           attempts++;
-          if (attempts > 30) {
+          // ✅ Increased timeout from 30 to 150 attempts (5 minutes)
+          if (attempts > 150) {
             clearInterval(interval);
-            setStatus("Search timed out.");
+            setStatus("Search timed out. The server took too long.");
             setLoading(false);
           }
         } catch (err) { console.error(err); }
@@ -91,13 +92,30 @@ export default function ImageSearchModal({ isOpen, onClose }: { isOpen: boolean;
     try {
       const cat = CATEGORIES.find(c => c.id === selectedCat);
       const subName = cat?.subcategories.find(s => s.slug === selectedSub)?.name;
-      
+
       const docRef = doc(collection(db, "products"));
       const finalPrice = editedPrices[product.id] || product.price;
+
+      // ✅ Re-upload image to our own server (or ImgBB) to fix broken images
+      let finalImageUrl = product.image;
+      if (product.image && product.image.includes("alicdn.com")) {
+        try {
+          const imgRes = await fetch("/api/upload-proxy", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ imageUrl: product.image })
+          });
+          const imgData = await imgRes.json();
+          if (imgData.url) finalImageUrl = imgData.url;
+        } catch (e) {
+          console.warn("Image proxy failed, using original", e);
+        }
+      }
 
       const productToSave = {
         ...product,
         id: docRef.id,
+        image: finalImageUrl,
         price: finalPrice,
         categoryId: selectedCat,
         subcategoryId: selectedSub,
@@ -162,7 +180,6 @@ export default function ImageSearchModal({ isOpen, onClose }: { isOpen: boolean;
 
           {results.length > 0 && (
             <div className="space-y-4 animate-fade-in">
-              
               <div className="bg-[#FFF6F6] p-4 rounded-xl border border-[#FAD4DD] space-y-3">
                 <h3 className="text-sm font-bold text-[#2B1A24]">Select where to save these products:</h3>
                 <div className="grid grid-cols-2 gap-3">
@@ -191,20 +208,16 @@ export default function ImageSearchModal({ isOpen, onClose }: { isOpen: boolean;
 
               <div className="flex justify-between items-center">
                 <h3 className="font-bold text-[#2B1A24]">Found Matches</h3>
-                <button onClick={() => setResults([])} className="text-xs text-[#E8546B] font-bold hover:underline">
-                  Search Another Image
-                </button>
+                <button onClick={() => setResults([])} className="text-xs text-[#E8546B] font-bold hover:underline">Search Another Image</button>
               </div>
 
               <div className="space-y-3">
                 {results.map((product) => (
                   <div key={product.id} className="flex flex-col sm:flex-row gap-4 p-3 border border-[#FAD4DD] rounded-xl bg-white shadow-sm">
                     <img src={product.image} className="w-20 h-20 object-contain bg-[#FFF6F6] rounded-lg border border-[#FAD4DD] p-1 shrink-0" />
-                    
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-[#2B1A24] line-clamp-2">{product.title}</p>
                       <p className="text-[10px] text-gray-500 mt-1 mb-2">Supplier: {product.supplierName || "1688"}</p>
-                      
                       <div className="flex items-center gap-2">
                         <label className="text-[10px] font-bold text-gray-600 uppercase">Selling Price (৳)</label>
                         <input 
@@ -215,7 +228,6 @@ export default function ImageSearchModal({ isOpen, onClose }: { isOpen: boolean;
                         />
                       </div>
                     </div>
-
                     <div className="flex flex-col justify-center shrink-0">
                       <button 
                         onClick={() => handleSaveProduct(product)}
