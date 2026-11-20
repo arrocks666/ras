@@ -14,16 +14,67 @@ import AppShell from "@/components/AppShell";
 const poppins = Poppins({ weight: ["300", "400", "500", "600", "700"], variable: "--font-poppins", subsets: ["latin"], display: "swap" });
 const playfair = Playfair_Display({ variable: "--font-playfair", subsets: ["latin"], display: "swap" });
 
+const SITE_URL = "https://ratrisartistry.com";
+const SITE_NAME = "Ratry's Artistry";
+const SITE_DESCRIPTION =
+  "Trendy imported fashion, jewelry and accessories from China — delivered all over Bangladesh. Cash on delivery, bKash and Nagad accepted.";
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  themeColor: "#E8546B",
 };
 
 export const metadata: Metadata = {
-  title: "Ratry's Artistry Shop",
-  description: "Trendy Products from China to Bangladesh.",
+  metadataBase: new URL(SITE_URL),
+  applicationName: SITE_NAME,
+  title: {
+    default: "Ratry's Artistry — Trendy Products from China to Bangladesh",
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  keywords: [
+    "Ratry's Artistry",
+    "online shop Bangladesh",
+    "imported jewelry Bangladesh",
+    "trendy accessories",
+    "cash on delivery",
+    "bKash",
+    "Nagad",
+    "1688 products",
+  ],
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: "Ratry's Artistry — Trendy Products from China to Bangladesh",
+    description: SITE_DESCRIPTION,
+    url: "/",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Ratry's Artistry — Trendy Products from China to Bangladesh",
+    description: SITE_DESCRIPTION,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  icons: {
+    icon: [{ url: "/favicon.ico" }],
+    apple: [{ url: "/logo.png" }],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
