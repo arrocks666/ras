@@ -253,10 +253,24 @@ export function mergeToLive(pizani: PizaniProduct, parsebird: ParsebirdListing |
     }
   }
   if (pizani.colors) {
+    const existingImages = new Set(
+      Array.from(colorMap.values())
+        .map((c) => c.image)
+        .filter((img): img is string => !!img)
+    );
+
     for (const c of pizani.colors) {
       const existing = colorMap.get(c.label);
-      if (!existing) colorMap.set(c.label, { id: c.id, label: c.label, hex: c.hex, image: c.image });
-      else if (!existing.image && c.image) existing.image = c.image;
+      if (existing) {
+        if (!existing.image && c.image) existing.image = c.image;
+        continue;
+      }
+      // Never add a second tile for a picture we already have — that was
+      // creating a duplicated colour list on the product page.
+      if (c.image && existingImages.has(c.image)) continue;
+
+      colorMap.set(c.label, { id: c.id, label: c.label, hex: c.hex, image: c.image });
+      if (c.image) existingImages.add(c.image);
     }
   }
 
@@ -352,7 +366,8 @@ export async function runImageSearchJob(jobId: string, imageBase64OrUrl: string)
           const live = mergeToLive(detail, parsebirdData);
           pushProduct(jobId, live);
           savedProducts.push(live);
-          await saveLiveProduct(live);
+          await saveLiveProduct(live); // Keep cache save
+          // ❌ REMOVED: await saveProductToStore(live);
           return;
         }
       } catch (err) { console.warn(`[job ${jobId}] ✗ ${offerId} failed:`, err); }
@@ -368,7 +383,8 @@ export async function runImageSearchJob(jobId: string, imageBase64OrUrl: string)
         if (fallback) {
           pushProduct(jobId, fallback);
           savedProducts.push(fallback);
-          await saveLiveProduct(fallback);
+          await saveLiveProduct(fallback); // Keep cache save
+          // ❌ REMOVED: await saveProductToStore(fallback);
         }
       }
     });

@@ -84,7 +84,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     const list = Array.isArray(product.variants) ? product.variants : [];
     const variant = list.length > 0
       ? list.find((v: any) => {
-          const matchesColor = !selectedColor || v.colorId === selectedColor.label || v.colorId === selectedColor.id || selectedColor.label === "Default";
+          const matchesColor =
+            !selectedColor ||
+            v.colorId === selectedColor.label ||
+            v.colorId === selectedColor.id ||
+            (!!selectedColor.image && !!v.image && v.image === selectedColor.image) ||
+            selectedColor.label === "Default";
           const matchesSize = !selectedSize || v.size === selectedSize || selectedSize === "One Size";
           return matchesColor && matchesSize;
         })
@@ -147,7 +152,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#FFF6F6]"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[#E8546B] border-t-transparent" /></div>;
   if (!product) return <div className="min-h-screen flex flex-col items-center justify-center bg-[#FFF6F6]"><h1 className="text-xl font-bold text-[#2B1A24]">Product not found</h1><Link href="/" className="mt-4 text-[#E8546B] underline">Go back home</Link></div>;
 
-  const colorsArray = (product.colors || []).map((c: any) => typeof c === "string" ? { label: c, image: "" } : c);
+  // one tile per picture — old imports stored the same colour twice
+  const colorsArray = (product.colors || [])
+    .map((c: any) => (typeof c === "string" ? { label: c, image: "" } : c))
+    .filter((c: any, i: number, arr: any[]) => {
+      if (!c?.image) return true;
+      return arr.findIndex((x: any) => x?.image === c.image) === i;
+    });
   const sizesArray = (product.sizes || []).map((s: any) => typeof s === "string" ? s : (s.label || s));
 
   const cleanLabel = (text: string) => {
