@@ -214,6 +214,16 @@ export function mergeToLive(pizani: PizaniProduct, parsebird: ParsebirdListing |
     }
   }
 
+  // Give every variant its own price from its own CNY value, so a product whose
+  // SKUs cost different amounts does NOT collapse to one price after import.
+  for (const v of variants) {
+    const cny = Number(v.priceCny) || 0;
+    if (cny > 0) {
+      const own = cnyToSellingBdt(cny);
+      if (own > 0) v.price = own;
+    }
+  }
+
   for (const v of variants) {
     if (!v.price || v.price <= 0) {
       v.price = pizani.price;
@@ -342,8 +352,7 @@ export async function runImageSearchJob(jobId: string, imageBase64OrUrl: string)
           const live = mergeToLive(detail, parsebirdData);
           pushProduct(jobId, live);
           savedProducts.push(live);
-          await saveLiveProduct(live); // Keep cache save
-          // ❌ REMOVED: await saveProductToStore(live);
+          await saveLiveProduct(live);
           return;
         }
       } catch (err) { console.warn(`[job ${jobId}] ✗ ${offerId} failed:`, err); }
@@ -359,8 +368,7 @@ export async function runImageSearchJob(jobId: string, imageBase64OrUrl: string)
         if (fallback) {
           pushProduct(jobId, fallback);
           savedProducts.push(fallback);
-          await saveLiveProduct(fallback); // Keep cache save
-          // ❌ REMOVED: await saveProductToStore(fallback);
+          await saveLiveProduct(fallback);
         }
       }
     });

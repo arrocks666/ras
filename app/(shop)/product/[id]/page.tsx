@@ -73,20 +73,28 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     load();
   }, [id]);
 
-  // PRICE RULE: the price set in the Control Room always wins.
-  // Variants only provide a fallback when the product has no base price at all.
+  // PRICE RULE:
+  // - if the product's SKUs really have different prices (like 1688), show the
+  //   selected variant's own price
+  // - if every variant was flattened to one price (or admin set one price),
+  //   the admin price wins everywhere
   useEffect(() => {
     if (!product) return;
     const base = Number(product.price) || 0;
-    const variant = Array.isArray(product.variants) && product.variants.length > 0
-      ? product.variants.find((v: any) => {
+    const list = Array.isArray(product.variants) ? product.variants : [];
+    const variant = list.length > 0
+      ? list.find((v: any) => {
           const matchesColor = !selectedColor || v.colorId === selectedColor.label || v.colorId === selectedColor.id || selectedColor.label === "Default";
           const matchesSize = !selectedSize || v.size === selectedSize || selectedSize === "One Size";
           return matchesColor && matchesSize;
         })
       : undefined;
+
+    const prices = list.map((v: any) => Number(v?.price) || 0).filter((p: number) => p > 0);
+    const hasVariantPricing = prices.length > 0 && prices.some((p: number) => p !== prices[0]);
     const variantPrice = Number(variant?.price) || 0;
-    setCurrentPrice(base > 0 ? base : variantPrice);
+
+    setCurrentPrice(hasVariantPricing && variantPrice > 0 ? variantPrice : base);
   }, [selectedColor, selectedSize, product]);
 
   const handleSelectColor = (c: any) => {

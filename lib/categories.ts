@@ -53,6 +53,10 @@ export const CATEGORIES: Category[] = [
     image: U("photo-1515562141207-7a88fb7ce338"),
     subcategories: [
       { name: "Necklaces", slug: "necklaces", image: U("photo-1599643478518-a784e5dc4c8f") },
+      { name: "Belly Chain", slug: "belly-chain", image: U("photo-1611652022419-a9419f74343d") },
+      { name: "Anklet", slug: "anklet", image: U("photo-1515562141207-7a88fb7ce338") },
+      { name: "Brooches", slug: "brooches", image: U("photo-1535632066927-ab7c9ab60908") },
+      { name: "Fake Nails", slug: "fake-nails", image: U("photo-1604654894610-df63bc536371") },
       { name: "Earrings", slug: "earrings", image: U("photo-1535632066927-ab7c9ab60908") },
       { name: "Rings", slug: "rings", image: U("photo-1605100804763-247f67b3557e") },
       { name: "Bracelets & Bangles", slug: "bracelets", image: U("photo-1611652022419-a9419f74343d") },

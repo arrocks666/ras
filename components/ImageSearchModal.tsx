@@ -5,6 +5,26 @@ import { doc, setDoc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { CATEGORIES } from "@/lib/categories";
 import { imgSrc, needsImgbbMigration } from "@/lib/img";
+import { useProducts } from "@/lib/ProductsContext";
+
+/** Firestore rejects `undefined` anywhere in the object — strip it deeply. */
+function deepClean<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value
+      .map((v) => deepClean(v))
+      .filter((v) => v !== undefined && v !== null) as unknown as T;
+  }
+  if (value !== null && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (v === undefined || v === null) continue;
+      if (typeof v === "number" && Number.isNaN(v)) continue;
+      out[k] = deepClean(v);
+    }
+    return out as T;
+  }
+  return value;
+}
 
 /** Uploads every remote 1688 image of a product to ImgBB in one request. */
 async function rehostImages(product: any): Promise<{ map: Record<string, string>; failed: number }> {
@@ -64,6 +84,7 @@ function SearchThumb({ src, alt }: { src?: string; alt: string }) {
 }
 
 export default function ImageSearchModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const { refresh } = useProducts();
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>("");
 
@@ -184,16 +205,17 @@ export default function ImageSearchModal({ isOpen, onClose }: { isOpen: boolean;
         isLive: true,
       };
 
-      await setDoc(docRef, productToSave);
+      await setDoc(docRef, deepClean(productToSave) as any);
+      await refresh();
       setStatus(
         failed > 0
           ? `Saved. ${failed} picture(s) could not be uploaded — they still load through /api/img.`
           : "Saved with pictures on ImgBB."
       );
       setResults(prev => prev.filter(p => p.id !== product.id));
-    } catch (err) {
-      console.error(err);
-      alert("Failed to save product");
+    } catch (err: any) {
+      console.error("Save product failed:", err);
+      alert("Failed to save product:\n\n" + (err?.message || String(err)));
     } finally {
       setSavingId(null);
     }
