@@ -152,8 +152,25 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#FFF6F6]"><div className="h-8 w-8 animate-spin rounded-full border-2 border-[#E8546B] border-t-transparent" /></div>;
   if (!product) return <div className="min-h-screen flex flex-col items-center justify-center bg-[#FFF6F6]"><h1 className="text-xl font-bold text-[#2B1A24]">Product not found</h1><Link href="/" className="mt-4 text-[#E8546B] underline">Go back home</Link></div>;
 
-  // one tile per picture — old imports stored the same colour twice
-  const colorsArray = (product.colors || [])
+  // one tile per picture — old imports stored the same colour twice.
+  // If a product has NO colours but its variants carry pictures, build the tiles
+  // from the variants so it is still selectable.
+  const variantsList: any[] = Array.isArray(product.variants) ? product.variants : [];
+  const colorSource: any[] =
+    product.colors && product.colors.length > 0
+      ? product.colors
+      : variantsList
+          .filter((v) => v && v.image)
+          .map((v, i) => ({
+            id: v.colorId || `option-${i}`,
+            label: v.colorId
+              ? String(v.colorId).replace(/^color-\d+-/, "").replace(/-/g, " ")
+              : `Option ${i + 1}`,
+            hex: "#9CA3AF",
+            image: v.image,
+          }));
+
+  const colorsArray = colorSource
     .map((c: any) => (typeof c === "string" ? { label: c, image: "" } : c))
     .filter((c: any, i: number, arr: any[]) => {
       if (!c?.image) return true;

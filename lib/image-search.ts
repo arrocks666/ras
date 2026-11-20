@@ -274,6 +274,25 @@ export function mergeToLive(pizani: PizaniProduct, parsebird: ParsebirdListing |
     }
   }
 
+  // If the listing gave us no colours but the SKUs have their own pictures,
+  // build the colour tiles from the variants so the product is still selectable.
+  if (colorMap.size === 0 && variants.length > 0) {
+    const seenIdx = new Set<string>();
+    variants.forEach((v, i) => {
+      if (!v.image || seenIdx.has(v.image)) return;
+      seenIdx.add(v.image);
+      const label = v.colorId
+        ? v.colorId.replace(/^color-\d+-/, "").replace(/-/g, " ")
+        : `Option ${i + 1}`;
+      colorMap.set(`option-${i}`, {
+        id: v.colorId || `option-${i}`,
+        label,
+        hex: "#9CA3AF",
+        image: v.image,
+      });
+    });
+  }
+
   return {
     id: `live-${pizani.id}`,
     title: pizani.title,
