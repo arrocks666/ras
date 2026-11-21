@@ -7,7 +7,7 @@ import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Order, OrderStatus, OrderPayment, OrderCharges, STATUS_ORDER, STATUS_LABELS } from "@/lib/OrderContext";
 import { formatBDT, formatDateTime } from "@/lib/adminOrders";
-import { generateInvoice } from "@/lib/generateInvoice"; // ✅ IMPORTED
+import { generateInvoice } from "@/lib/generateInvoice";
 import { loadSettings, DEFAULT_SETTINGS, type StoreSettings } from "@/lib/firestoreSettings";
 import { sendStatusUpdateEmail, sendPaymentEmail } from "@/lib/sendEmail";
 
@@ -208,16 +208,15 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
     finally { setSavingCharges(false); }
   };
 
-  // ✅ NEW: Download Invoice Handler
   const handleDownloadInvoice = async () => {
     if (!order) return;
     setDownloading(true);
     try {
-      await generateInvoice(order, settings.storeName, "ratrysartistry.com", settings.logoUrl || undefined);
+      await generateInvoice(order, settings.storeName, "ratrisartistry.com", settings.logoUrl || undefined);
       showToast("Invoice downloaded");
-    } catch (err) { 
+    } catch (err) {
       console.error(err);
-      showToast("Failed to generate invoice"); 
+      showToast("Failed to generate invoice");
     }
     finally { setDownloading(false); }
   };
@@ -249,8 +248,7 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
               {isManual && <span className="rounded-full bg-[#FFF6F6] px-2 py-1 text-[10px] font-bold uppercase text-[#6B5558]">Manual</span>}
               {isFullyPaid ? <span className="rounded-full bg-green-100 px-3 py-1 text-[10px] font-bold uppercase text-green-700">✅ Paid</span> : <span className="rounded-full bg-red-100 px-3 py-1 text-[10px] font-bold uppercase text-red-600">⏳ Due {formatBDT(orderDue)}</span>}
             </div>
-            
-            {/* ✅ NEW: INVOICE BUTTON */}
+
             <button onClick={handleDownloadInvoice} disabled={downloading} className="flex items-center gap-2 rounded-lg border-2 border-[#E8546B] bg-white px-4 py-2 text-sm font-semibold text-[#E8546B] transition hover:bg-[#FFF6F6] disabled:opacity-40">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
               {downloading ? "Generating..." : "Download Invoice"}

@@ -51,7 +51,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     if (!order) return;
     setDownloading(true);
     try {
-      await generateInvoice(order, settings.storeName, "ratrysartistry.com", settings.logoUrl || undefined);
+      await generateInvoice(order, settings.storeName, "ratrisartistry.com", settings.logoUrl || undefined);
     } catch (err) {
       console.error("PDF generation failed", err);
     } finally {

@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { readFile } from "fs/promises";
 import path from "path";
 
-export const alt = "Ratry's Artistry — Trendy products from China to Bangladesh";
+export const alt = "Ratris Artistry — Trendy products from China to Bangladesh";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -33,12 +33,7 @@ export default async function OpengraphImage() {
       >
         <div style={{ display: "flex", alignItems: "center" }}>
           {logo ? (
-            <img
-              src={logo}
-              width={92}
-              height={92}
-              style={{ borderRadius: 24, objectFit: "cover" }}
-            />
+            <img src={logo} width={92} height={92} style={{ borderRadius: 24, objectFit: "cover" }} />
           ) : (
             <div
               style={{
@@ -59,15 +54,8 @@ export default async function OpengraphImage() {
           )}
 
           <div style={{ display: "flex", flexDirection: "column", marginLeft: 22 }}>
-            <div
-              style={{
-                fontSize: 22,
-                letterSpacing: 6,
-                color: "#B0364A",
-                fontWeight: 700,
-              }}
-            >
-              RATRY&apos;S ARTISTRY
+            <div style={{ fontSize: 22, letterSpacing: 6, color: "#B0364A", fontWeight: 700 }}>
+              RATRIS ARTISTRY
             </div>
             <div style={{ fontSize: 20, color: "#7A5E64", marginTop: 6 }}>
               China → Bangladesh
@@ -79,26 +67,12 @@ export default async function OpengraphImage() {
           <div style={{ fontSize: 64, lineHeight: 1.15, fontWeight: 800, maxWidth: 940 }}>
             Trendy products from China,
           </div>
-          <div
-            style={{
-              fontSize: 64,
-              lineHeight: 1.15,
-              fontWeight: 800,
-              color: "#E8546B",
-              marginTop: 6,
-            }}
-          >
+          <div style={{ fontSize: 64, lineHeight: 1.15, fontWeight: 800, color: "#E8546B", marginTop: 6 }}>
             delivered to your door.
           </div>
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex" }}>
             {["Cash on delivery", "bKash · Nagad", "Nationwide shipping"].map((t) => (
               <div

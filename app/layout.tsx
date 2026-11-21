@@ -15,7 +15,8 @@ const poppins = Poppins({ weight: ["300", "400", "500", "600", "700"], variable:
 const playfair = Playfair_Display({ variable: "--font-playfair", subsets: ["latin"], display: "swap" });
 
 const SITE_URL = "https://ratrisartistry.com";
-const SITE_NAME = "Ratry's Artistry";
+const SITE_NAME = "Ratris Artistry";
+const TITLE = "Ratris Artistry — Trendy Products from China to Bangladesh";
 const SITE_DESCRIPTION =
   "Trendy imported fashion, jewelry and accessories from China — delivered all over Bangladesh. Cash on delivery, bKash and Nagad accepted.";
 
@@ -31,12 +32,12 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   applicationName: SITE_NAME,
   title: {
-    default: "Ratry's Artistry — Trendy Products from China to Bangladesh",
+    default: TITLE,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
   keywords: [
-    "Ratry's Artistry",
+    "Ratris Artistry",
     "online shop Bangladesh",
     "imported jewelry Bangladesh",
     "trendy accessories",
@@ -51,14 +52,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: SITE_NAME,
-    title: "Ratry's Artistry — Trendy Products from China to Bangladesh",
+    title: TITLE,
     description: SITE_DESCRIPTION,
     url: "/",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Ratry's Artistry — Trendy Products from China to Bangladesh",
+    title: TITLE,
     description: SITE_DESCRIPTION,
   },
   robots: {
