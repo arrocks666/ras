@@ -34,7 +34,7 @@ const FAQS = [
   },
   {
     q: "How can I contact customer support?",
-    a: "The fastest way is WhatsApp. You can also email us at hello@ratrysartistry.com. We reply within 24 hours.",
+    a: "The fastest way is WhatsApp. You can also email us at support@ratrisartistry.com. We reply within 24 hours.",
   },
 ];
 

@@ -20,12 +20,12 @@ import {
 } from "@/lib/coupons";
 import { getUserOrders } from "@/lib/firestoreOrders";
 import type { Order } from "@/lib/OrderContext";
-import { useWishlist } from "@/lib/WishlistContext"; // ✅ FIX #5: Imported
+import { useWishlist } from "@/lib/WishlistContext";
 
 export default function AccountPage() {
   const router = useRouter();
   const { user, profile, loading, logout, updateProfile } = useAuth();
-  const wishlist = useWishlist(); // ✅ FIX #5: Hook initialized
+  const wishlist = useWishlist();
 
   const [openSection, setOpenSection] = useState<string | null>(null);
 
@@ -50,6 +50,7 @@ export default function AccountPage() {
   const [couponsList, setCouponsList] = useState<Coupon[]>([]);
   const [couponCount, setCouponCount] = useState(0);
   const [dueOrders, setDueOrders] = useState<Order[]>([]);
+  const [orderCount, setOrderCount] = useState(0);
   const [totalDue, setTotalDue] = useState(0);
 
   useEffect(() => {
@@ -69,6 +70,7 @@ export default function AccountPage() {
     })();
     (async () => {
       const orders = await getUserOrders(user.uid);
+      setOrderCount(orders.length);
       const pending = orders.filter((o) => (o.paidAmount ?? 0) < o.total);
       setDueOrders(pending);
       setTotalDue(pending.reduce((sum, o) => sum + (o.total - (o.paidAmount ?? 0)), 0));
@@ -138,6 +140,12 @@ export default function AccountPage() {
     const displayName = profile?.name || "Customer";
     const rawEmail = profile?.email?.trim() ?? "";
     const emailToShow = rawEmail !== "" && !rawEmail.endsWith("@ratrysartistry.app") ? rawEmail : null;
+    const initials = displayName
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w: string) => w[0]?.toUpperCase())
+      .join("");
 
     return (
       <div className="min-h-screen bg-[#FFF6F6] pb-24 md:pb-8">
@@ -150,62 +158,64 @@ export default function AccountPage() {
           </div>
         </div>
 
-        <div className="mx-auto max-w-3xl px-4 py-5 md:py-8 space-y-5 animate-fade-in">
+        <div className="mx-auto max-w-3xl px-4 py-5 md:py-8 space-y-4 animate-fade-in">
+
           {/* PREMIUM PROFILE CARD */}
-          <div className="relative overflow-hidden rounded-3xl border border-[#FAD4DD] bg-white shadow-soft">
-            <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-r from-[#E8546B] to-[#FF8B9A]" />
-            <div className="relative z-10 px-6 pt-8 pb-6">
-              <div className="flex items-end justify-between gap-4">
-                <div className="flex items-end gap-4">
-                  <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-full border-4 border-white bg-[#FDE8EC] text-3xl text-[#E8546B] shadow-md">
-                    👤
-                  </div>
-                  <div className="min-w-0 flex-1 pb-1">
-                    <h2 className="truncate text-xl font-bold text-[#2B1A24]">{displayName}</h2>
-                    <p className="truncate text-xs font-medium text-[#6B5558]">{displayPhone}</p>
-                    {emailToShow && <p className="truncate text-xs font-medium text-[#6B5558]">{emailToShow}</p>}
-                  </div>
-                </div>
-                <button 
-                  onClick={() => setEditingProfile(!editingProfile)}
-                  className="flex-shrink-0 rounded-full bg-white/20 border border-[#E8546B]/30 px-3 py-1.5 text-xs font-bold text-[#E8546B] backdrop-blur-md hover:bg-white transition-colors"
-                >
-                  {editingProfile ? "Cancel" : "Edit"}
-                </button>
+          <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#FF8B9A] via-[#E8546B] to-[#B02A58] p-[26px] shadow-[0_24px_50px_-24px_rgba(232,84,107,0.85)]">
+            <div className="pointer-events-none absolute -right-14 -top-20 h-52 w-52 rounded-full bg-white/15 blur-2xl" />
+            <div className="pointer-events-none absolute -left-12 -bottom-24 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
+            <div className="pointer-events-none absolute inset-0 opacity-[0.12]" style={{ backgroundImage: "radial-gradient(#fff 1px, transparent 1px)", backgroundSize: "14px 14px" }} />
+
+            <div className="relative z-10 flex items-start gap-4">
+              <div className="flex h-[68px] w-[68px] flex-shrink-0 items-center justify-center rounded-2xl border-2 border-white/45 bg-white/20 text-2xl font-bold text-white backdrop-blur-sm">
+                {initials || "👤"}
               </div>
 
-              {editingProfile && (
-                <div className="mt-6 rounded-2xl border border-[#FAD4DD] bg-[#FFF6F6] p-4 animate-fade-down">
-                  <div className="space-y-3">
-                    <InputField label="Full Name" value={editName} onChange={setEditName} editing={true} placeholder="Your name" />
-                    <InputField label="Phone Number" value={editPhone} onChange={setEditPhone} editing={true} placeholder="01XXXXXXXXX" />
-                    <InputField label="Email (For updates)" value={editEmail} onChange={setEditEmail} editing={true} placeholder="you@example.com" />
-                  </div>
-                  <div className="mt-4 flex items-center gap-3">
-                    <button onClick={handleSaveProfile} disabled={savingProfile} className="rounded-xl bg-[#E8546B] px-6 py-2.5 text-xs font-bold text-white shadow-sm disabled:opacity-40">
-                      {savingProfile ? "Saving..." : "Save Profile"}
-                    </button>
-                    {profileMsg && <span className="text-xs font-bold text-green-600">{profileMsg}</span>}
-                  </div>
-                </div>
-              )}
+              <div className="min-w-0 flex-1">
+                <p className="text-[9.5px] font-bold uppercase tracking-[0.24em] text-white/70">My account</p>
+                <h2 className="mt-1 truncate text-[22px] font-bold leading-tight text-white">{displayName}</h2>
+                <p className="mt-1 truncate text-[11.5px] font-medium text-white/85">{displayPhone}</p>
+                {emailToShow && <p className="truncate text-[11.5px] font-medium text-white/70">{emailToShow}</p>}
+              </div>
+
+              <button
+                onClick={() => setEditingProfile(!editingProfile)}
+                className="flex-shrink-0 rounded-full bg-white/95 px-4 py-1.5 text-[11px] font-bold text-[#C21C5E] shadow-sm transition hover:bg-white active:scale-95"
+              >
+                {editingProfile ? "Cancel" : "Edit"}
+              </button>
             </div>
+
+            {editingProfile && (
+              <div className="relative z-10 mt-5 rounded-2xl bg-white p-4 shadow-lg animate-fade-down">
+                <div className="space-y-3">
+                  <InputField label="Full Name" value={editName} onChange={setEditName} editing={true} placeholder="Your name" />
+                  <InputField label="Phone Number" value={editPhone} onChange={setEditPhone} editing={true} placeholder="01XXXXXXXXX" />
+                  <InputField label="Email (For updates)" value={editEmail} onChange={setEditEmail} editing={true} placeholder="you@example.com" />
+                </div>
+                <div className="mt-4 flex items-center gap-3">
+                  <button onClick={handleSaveProfile} disabled={savingProfile} className="rounded-xl bg-[#E8546B] px-6 py-2.5 text-xs font-bold text-white shadow-sm disabled:opacity-40">
+                    {savingProfile ? "Saving..." : "Save Profile"}
+                  </button>
+                  {profileMsg && <span className="text-xs font-bold text-green-600">{profileMsg}</span>}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* COLORFUL STATS */}
+          {/* STATS */}
           <div className="grid grid-cols-3 gap-3">
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-[#FAD4DD] bg-white p-4 shadow-sm">
-              <span className="text-2xl font-bold text-[#E8546B]">{dueOrders.length}</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#6B5558]">Orders</span>
-            </div>
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-[#FAD4DD] bg-white p-4 shadow-sm">
-              {/* ✅ FIX #5: Replaced hardcoded 0 with actual wishlist size */}
+            <Link href="/orders" className="group flex flex-col items-center justify-center gap-1 rounded-2xl border border-[#FAD4DD] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#E8546B]/40 hover:shadow-md">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#A88F92]">Orders</span>
+              <span className="text-2xl font-bold text-[#E8546B]">{orderCount}</span>
+            </Link>
+            <Link href="/wishlist" className="group flex flex-col items-center justify-center gap-1 rounded-2xl border border-[#FAD4DD] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#E8546B]/40 hover:shadow-md">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#A88F92]">Wishlist</span>
               <span className="text-2xl font-bold text-[#E8546B]">{wishlist.items.size}</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#6B5558]">Wishlist</span>
-            </div>
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-[#FAD4DD] bg-white p-4 shadow-sm">
+            </Link>
+            <div className="flex flex-col items-center justify-center gap-1 rounded-2xl border border-[#FAD4DD] bg-white p-4 shadow-sm">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#A88F92]">Coupons</span>
               <span className="text-2xl font-bold text-[#E8546B]">{couponCount}</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#6B5558]">Coupons</span>
             </div>
           </div>
 
@@ -326,10 +336,10 @@ export default function AccountPage() {
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] font-medium text-[#6B5558]">
             <a href="#" className="hover:text-[#E8546B]">Privacy Policy</a><span>|</span>
             <a href="#" className="hover:text-[#E8546B]">Terms & Conditions</a><span>|</span>
-            <a href="#" className="hover:text-[#E8546B]">Shipping Policy</a>
+            <a href="#" className="hover:text-[#E8546B]">Shipping Policy</a><span>|</span>
           </div>
 
-          <p className="text-center text-[10px] font-medium text-[#A88F92]">Ratry's Artistry Shop v0.1.0 • Made for Bangladesh 🇧🇩</p>
+          <p className="text-center text-[10px] font-medium text-[#A88F92]">Ratri&apos;s Artistry Shop v0.1.0 • Made for Bangladesh 🇧🇩</p>
         </div>
 
         <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#FAD4DD] bg-white p-3 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.05)] md:hidden">

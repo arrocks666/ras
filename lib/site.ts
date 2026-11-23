@@ -3,7 +3,7 @@
 
 export const WHATSAPP_NUMBER = "880179123735";
 export const WHATSAPP_DISPLAY = "+880 179 123 735";
-export const SUPPORT_EMAIL = "hello@ratrysartistry.com";
+export const SUPPORT_EMAIL = "support@ratrisartistry.com";
 
 export function waLink(text?: string): string {
   const base = `https://wa.me/${WHATSAPP_NUMBER.replace(/\D/g, "")}`;

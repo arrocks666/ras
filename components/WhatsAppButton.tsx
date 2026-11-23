@@ -11,7 +11,7 @@ type Props = {
 
 // Just update the default parameter:
 export default function WhatsAppButton({
-  phoneNumber = "8801689768307", // ✅ FIXED
+  phoneNumber = "8801879129735", // ✅ FIXED
   productTitle = "",
   productUrl = "",
   className = "",

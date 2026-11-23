@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useOrders, STATUS_ORDER, STATUS_LABELS, OrderStatus, Order } from "@/lib/OrderContext";
 import { useProducts } from "@/lib/ProductsContext";
 import { formatBDT } from "@/lib/data";
+import { imgSrc } from "@/lib/img";
 import { getOrder as getOrderFromFirestore } from "@/lib/firestoreOrders";
 import { generateInvoice } from "@/lib/generateInvoice";
 import { loadSettings, DEFAULT_SETTINGS, type StoreSettings } from "@/lib/firestoreSettings";
@@ -89,6 +90,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   });
 
   const payments = order.payments ?? [];
+  const services = order.selectedServices ?? [];
+  const servicesTotal = services.reduce((sum, s) => sum + (Number(s.price) || 0), 0);
   const totalPaid = order.paidAmount ?? 0;
   const totalDue = Math.max(0, order.total - totalPaid);
 
@@ -217,13 +220,13 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             {order.items.map((item, i) => {
               const product = products.find((p) => p.id === item.productId);
               const title = item.title ?? product?.title ?? "Product";
-              const image = item.image ?? product?.image ?? "";
+              const image = imgSrc(item.image ?? product?.image ?? "");
               return (
                 <div key={i} className="flex items-center gap-4 border-b border-[#FAD4DD] pb-4 last:border-0 last:pb-0">
                   <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#FAD4DD] bg-[#FFF6F6] p-1">
                     {image ? (
                       <button onClick={() => setFullscreenImage(image)} className="flex h-full w-full items-center justify-center">
-                        <img src={image} alt="" className="max-h-full max-w-full object-contain mix-blend-multiply" />
+                        <img src={image} alt="" referrerPolicy="no-referrer" className="max-h-full max-w-full object-contain mix-blend-multiply" />
                       </button>
                     ) : (
                       <span className="text-xl">🎁</span>
@@ -241,11 +244,39 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             })}
           </div>
 
+          {/* SERVICES */}
+          {services.length > 0 && (
+            <div className="mt-6 rounded-2xl border border-[#FAD4DD] bg-[#FFF6F6] p-4">
+              <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-[#E8546B]">Services you paid for</p>
+              <div className="space-y-2">
+                {services.map((s) => (
+                  <div key={s.id} className="flex items-center justify-between">
+                    <span className="text-[13px] font-medium text-[#2B1A24]">
+                      {s.id === "video_inspection" ? "🎬 " : s.id === "basic_inspection" ? "🔍 " : "✦ "}
+                      {s.name}
+                    </span>
+                    <span className="text-[13px] font-bold text-[#E8546B]">{formatBDT(s.price)}</span>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between border-t border-[#FAD4DD] pt-2">
+                  <span className="text-[12px] font-bold uppercase tracking-wider text-[#6B5558]">Services total</span>
+                  <span className="text-sm font-bold text-[#2B1A24]">{formatBDT(servicesTotal)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="mt-5 space-y-2 rounded-2xl bg-[#FFF6F6] p-4 text-sm">
             <div className="flex justify-between text-[#6B5558]">
               <span>Subtotal</span>
               <span className="font-medium text-[#2B1A24]">{formatBDT(order.subtotal)}</span>
             </div>
+            {servicesTotal > 0 && (
+              <div className="flex justify-between text-[#6B5558]">
+                <span>Services</span>
+                <span className="font-medium text-[#2B1A24]">{formatBDT(servicesTotal)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-[#6B5558]">
               <span>Shipping</span>
               <span className="font-medium text-[#2B1A24]">{formatBDT(order.shipping)}</span>
@@ -338,6 +369,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           <img
             src={fullscreenImage}
             alt=""
+            referrerPolicy="no-referrer"
             className="max-h-[85vh] max-w-[90vw] rounded-xl object-contain"
             onClick={(e) => e.stopPropagation()}
           />

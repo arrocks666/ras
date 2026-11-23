@@ -2,7 +2,7 @@
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import type { Order } from "./OrderContext";
-import { STATUS_LABELS } from "./OrderContext";
+import { STATUS_LABELS } from "./OrderContext"; import { imgSrc } from "./img";
 
 const escapeHtml = (value: unknown): string =>
   String(value ?? "")
@@ -64,7 +64,7 @@ export async function generateInvoice(
 
       const image = item.image
         ? `<img class="product-image"
-            src="${escapeHtml(item.image)}"
+            src="${escapeHtml(imgSrc(item.image))}"
             crossorigin="anonymous"
             alt="${title}" />`
         : `<div class="product-placeholder">🎁</div>`;

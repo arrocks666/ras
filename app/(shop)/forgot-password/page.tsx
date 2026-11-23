@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-const SUPPORT_WHATSAPP = "8801689768307";
+const SUPPORT_WHATSAPP = "8801879129735";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
