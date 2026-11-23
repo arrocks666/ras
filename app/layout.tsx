@@ -56,10 +56,10 @@ export const metadata: Metadata = {
     title: TITLE,
     description: SITE_DESCRIPTION,
     url: "/",
-    locale: "en_US", images: [{ url: "/og.png", width: 1200, height: 630, type: "image/png" }],
+    locale: "en_US", images: [{ url: "/og.jpg", width: 1200, height: 630, type: "image/jpeg" }],
   },
   twitter: {
-    card: "summary_large_image", images: ["/og.png"],
+    card: "summary_large_image", images: ["/og.jpg"],
     title: TITLE,
     description: SITE_DESCRIPTION,
   },
@@ -75,14 +75,14 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/logo.png", type: "image/png", sizes: "512x512" },
-      { url: "/logo.png", type: "image/png", sizes: "192x192" },
-      { url: "/logo.png", type: "image/png", sizes: "48x48" },
+      { url: "/icon.png", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "512x512" },
+      { url: "/icon.png", type: "image/png", sizes: "192x192" },
+      { url: "/icon.png", type: "image/png", sizes: "48x48" },
     ],
-    shortcut: [{ url: "/favicon.ico" }],
-    apple: [{ url: "/logo.png", sizes: "180x180" }],
-    other: [{ rel: "mask-icon", url: "/logo.png" }],
+    shortcut: [{ url: "/icon.png" }],
+    apple: [{ url: "/icon.png", sizes: "180x180" }],
+    other: [{ rel: "mask-icon", url: "/icon.png" }],
   },
 };
 

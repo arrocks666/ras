@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 
 const BRAND = "Ratris Artistry Shop";
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "orders@ratrisartistry.com";
-const REPLY_TO = process.env.RESEND_REPLY_TO || "support@ratrisartistry.com";
+const REPLY_TO = process.env.RESEND_REPLY_TO || "ratrisartistry@gmail.com";
 
 /* Simple health check: open /api/send-email in the browser to see what is configured */
 export async function GET() {

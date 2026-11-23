@@ -107,7 +107,7 @@ export const DEFAULT_SETTINGS: StoreSettings = {
   ownerName: "Ratry's Artistry Shop",
   footerDescription: "Your trusted gift shop bringing quality products from China directly to Bangladesh. Trendy collections, best quality, delivered to your doorstep.",
   contactPhone: "+880 1879-129735",
-  contactEmail: "support@ratrisartistry.com",
+  contactEmail: "ratrisartistry@gmail.com",
   contactAddress: "Dhaka, Bangladesh",
   contactHours: "Sat – Thu, 10AM – 8PM",
   facebookUrl: "https://facebook.com",

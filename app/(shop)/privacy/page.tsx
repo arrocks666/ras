@@ -28,7 +28,7 @@ export default function PrivacyPage() {
           <h3 className="font-bold text-[#2B1A24] mt-6 mb-2">4. Sharing</h3>
           <p>We do not sell your personal information. We share data only with delivery partners and payment processors necessary to fulfill your order.</p>
           <h3 className="font-bold text-[#2B1A24] mt-6 mb-2">5. Contact</h3>
-          <p>For any privacy concerns, contact us at support@ratrisartistry.com.</p>
+          <p>For any privacy concerns, contact us at ratrisartistry@gmail.com.</p>
         </div>
       </div>
     </div>

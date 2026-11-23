@@ -155,7 +155,7 @@ export default function Footer() {
               <ul className="space-y-3 text-sm text-[#6B5558]">
                 <li className="flex items-start gap-2"><span className="text-[#E8546B]">📍</span><span>{settings.contactAddress || "Dhaka, Bangladesh"}</span></li>
                 <li className="flex items-start gap-2"><span className="text-[#E8546B]">📱</span><a href={`tel:${(settings.contactPhone || "").replace(/\s/g, "")}`} className="hover:text-[#E8546B]">{settings.contactPhone || "+880 1879-129735"}</a></li>
-                <li className="flex items-start gap-2"><span className="text-[#E8546B]">✉️</span><a href={`mailto:${settings.contactEmail || ""}`} className="hover:text-[#E8546B] break-all">{settings.contactEmail || "support@ratrisartistry.com"}</a></li>
+                <li className="flex items-start gap-2"><span className="text-[#E8546B]">✉️</span><a href={`mailto:${settings.contactEmail || ""}`} className="hover:text-[#E8546B] break-all">{settings.contactEmail || "ratrisartistry@gmail.com"}</a></li>
                 <li className="flex items-start gap-2"><span className="text-[#E8546B]">⏰</span><span>{settings.contactHours || "Sat – Thu, 10AM – 8PM"}</span></li>
               </ul>
             </div>

@@ -64,7 +64,7 @@ export default function ContactPage() {
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-pink-50 text-2xl mb-4">📧</div>
             <h3 className="text-sm font-bold text-[#2B1A24] mb-1">Email</h3>
             <p className="text-xs text-[#6B5558]">For business inquiries and support.</p>
-            <p className="mt-3 text-xs font-bold text-[#E8546B]">support@ratrisartistry.com</p>
+            <p className="mt-3 text-xs font-bold text-[#E8546B]">ratrisartistry@gmail.com</p>
           </div>
         </div>
 
