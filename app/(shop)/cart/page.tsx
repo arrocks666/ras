@@ -109,7 +109,7 @@ export default function CartPage() {
                     <Link href={row.href} className="pr-2">
                       <h3 className="text-[13px] font-bold text-[#2B1A24] leading-tight line-clamp-2">{row.title}</h3>
                       <div className="mt-1 flex flex-wrap items-center gap-1">
-                        {row.colorLabel && row.colorLabel !== "Default" && (
+                        {row.colorLabel && (
                           <span className="rounded bg-[#FFF6F6] px-1.5 py-0.5 text-[10px] font-medium text-[#6B5558]">Color: {row.colorLabel}</span>
                         )}
                         {row.size && row.size !== "One Size" && (
@@ -176,7 +176,7 @@ export default function CartPage() {
                       <Link href={row.href}><h3 className="text-sm font-semibold leading-tight text-[#2B1A24] line-clamp-2 md:text-base">{row.title}</h3></Link>
                       <div className="mt-1 flex flex-wrap items-center gap-2">
                         {row.colorLabel && <span className="rounded bg-[#FFF6F6] px-2 py-0.5 text-[10px] font-medium text-[#6B5558]">Color: {row.colorLabel}</span>}
-                        {row.size && <span className="rounded bg-[#FFF6F6] px-2 py-0.5 text-[10px] font-medium text-[#6B5558]">Size: {row.size}</span>}
+                        {row.size && row.size !== "One Size" && <span className="rounded bg-[#FFF6F6] px-2 py-0.5 text-[10px] font-medium text-[#6B5558]">Size: {row.size}</span>}
                       </div>
                       <div className="mt-2 text-base font-bold text-[#E8546B] md:text-lg">{formatBDT(row.price)}</div>
                     </div>

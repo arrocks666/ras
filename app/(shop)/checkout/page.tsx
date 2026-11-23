@@ -38,7 +38,7 @@ function CheckoutImage({ src }: { src: string }) {
 
 type CheckoutRow = {
   productId: string; colorId: string; size?: string; quantity: number;
-  price: number; title: string; image: string; isLive: boolean;
+  price: number; title: string; image: string; isLive: boolean; variant?: string;
 };
 
 function CheckoutContent() {
@@ -93,7 +93,17 @@ function CheckoutContent() {
         if (!wantedKeys.has(withSize) && !wantedKeys.has(withoutSize)) continue;
       }
       if (item.isLive && item.liveSnapshot) {
-        result.push({ productId: item.productId, colorId: item.colorId, size: item.size, quantity: item.quantity, price: item.liveSnapshot.price, title: item.liveSnapshot.title, image: item.liveSnapshot.image, isLive: true });
+        result.push({
+          productId: item.productId,
+          colorId: item.colorId,
+          size: item.size,
+          quantity: item.quantity,
+          price: item.liveSnapshot.price,
+          title: item.liveSnapshot.title,
+          image: item.liveSnapshot.image,
+          isLive: true,
+          variant: item.colorLabel ?? undefined,
+        });
         continue;
       }
       const product = products.find((p) => p.id === item.productId);
@@ -108,6 +118,7 @@ function CheckoutContent() {
         title: item.title ?? product?.title ?? "Product",
         image: item.image ?? product?.image ?? "",
         isLive: false,
+        variant: item.colorLabel ?? undefined,
       });
     }
     return result;
@@ -168,7 +179,18 @@ function CheckoutContent() {
     setPlacing(true); setError(null);
     try {
       const newOrder = await orders.addOrder({
-        items: rows.map((r) => ({ productId: r.productId, colorId: r.colorId, size: r.size, quantity: r.quantity, price: r.price, title: r.title, image: r.image, isLive: r.isLive })),
+        items: rows.map((r) => ({
+          productId: r.productId,
+          colorId: r.colorId,
+          colorLabel: r.variant,
+          variant: r.variant,
+          size: r.size,
+          quantity: r.quantity,
+          price: r.price,
+          title: r.title,
+          image: r.image,
+          isLive: r.isLive,
+        })),
         subtotal, shipping: 0, total,
         paymentMethod: PAYMENT_METHODS.find((p) => p.id === payment)?.label ?? "COD",
         address: { ...address, email: email.trim() },
@@ -393,13 +415,16 @@ function CheckoutContent() {
                 <h2 className="mb-3 text-sm font-bold text-[#2B1A24]">Order Summary</h2>
                 <div className="space-y-3">
                   {rows.map((r) => (
-                    <div key={`${r.productId}-${r.colorId}`} className="flex items-center gap-3">
+                    <div key={`${r.productId}-${r.colorId}-${r.size ?? ""}`} className="flex items-center gap-3">
                       <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl border border-[#FAD4DD] bg-white p-1">
                         <CheckoutImage src={r.image} />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-[#2B1A24]">{r.title}</p>
-                        <p className="text-[11px] text-[#6B5558]">Qty {r.quantity} {r.size ? `· ${r.size}` : ""}</p>
+                        <p className="text-[11px] text-[#6B5558]">
+                          Qty {r.quantity}
+                          {r.variant ? ` · ${r.variant}` : r.size ? ` · ${r.size}` : ""}
+                        </p>
                       </div>
                       <span className="text-sm font-bold text-[#E8546B]">{formatBDT(r.price * r.quantity)}</span>
                     </div>

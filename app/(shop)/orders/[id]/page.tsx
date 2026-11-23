@@ -221,8 +221,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               const product = products.find((p) => p.id === item.productId);
               const title = item.title ?? product?.title ?? "Product";
               const image = imgSrc(item.image ?? product?.image ?? "");
+              const hasColor = !!item.colorLabel && item.colorLabel !== "Default";
+              const hasSize = !!item.size && item.size !== "One Size";
+              const variantText = item.variant || [item.colorLabel, item.size].filter(Boolean).join(" / ");
+
               return (
-                <div key={i} className="flex items-center gap-4 border-b border-[#FAD4DD] pb-4 last:border-0 last:pb-0">
+                <div key={i} className="flex items-start gap-4 border-b border-[#FAD4DD] pb-4 last:border-0 last:pb-0">
                   <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#FAD4DD] bg-[#FFF6F6] p-1">
                     {image ? (
                       <button onClick={() => setFullscreenImage(image)} className="flex h-full w-full items-center justify-center">
@@ -232,12 +236,32 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                       <span className="text-xl">🎁</span>
                     )}
                   </div>
+
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-[#2B1A24]">{title}</p>
-                    <p className="mt-1 inline-flex items-center rounded bg-[#FFF6F6] px-2 py-0.5 text-[10px] font-bold text-[#6B5558]">
-                      Qty {item.quantity} {item.variant ? `· ${item.variant}` : ""}
-                    </p>
+                    <p className="line-clamp-2 text-sm font-bold text-[#2B1A24]">{title}</p>
+
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                      <span className="rounded bg-[#FFF6F6] px-2 py-0.5 text-[10px] font-bold text-[#6B5558]">
+                        Qty {item.quantity}
+                      </span>
+                      {hasColor && (
+                        <span className="rounded bg-[#E8546B]/10 px-2 py-0.5 text-[10px] font-bold text-[#E8546B]">
+                          Color: {item.colorLabel}
+                        </span>
+                      )}
+                      {hasSize && (
+                        <span className="rounded bg-[#E8546B]/10 px-2 py-0.5 text-[10px] font-bold text-[#E8546B]">
+                          Size: {item.size}
+                        </span>
+                      )}
+                      {!hasColor && !hasSize && variantText && (
+                        <span className="rounded bg-[#E8546B]/10 px-2 py-0.5 text-[10px] font-bold text-[#E8546B]">
+                          {variantText}
+                        </span>
+                      )}
+                    </div>
                   </div>
+
                   <span className="text-sm font-bold text-[#E8546B]">{formatBDT(item.price * item.quantity)}</span>
                 </div>
               );

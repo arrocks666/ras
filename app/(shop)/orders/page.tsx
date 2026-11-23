@@ -15,7 +15,7 @@ type ListedOrder = {
   createdAt: number;
   paidAmount?: number;
   address?: { name?: string; phone?: string; district?: string };
-  items?: { title?: string; image?: string; quantity: number; price: number }[];
+  items?: { title?: string; image?: string; quantity: number; price: number; variant?: string; colorLabel?: string }[];
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -139,6 +139,7 @@ export default function OrdersPage() {
               const items = order.items ?? [];
               const first = items[0];
               const firstImage = imgSrc(first?.image ?? "");
+              const variantText = first?.variant || first?.colorLabel || "";
               const date = new Date(order.createdAt).toLocaleDateString("en-GB", {
                 day: "2-digit",
                 month: "short",
@@ -173,6 +174,11 @@ export default function OrdersPage() {
                       <p className="line-clamp-1 text-xs font-semibold text-[#2B1A24]">
                         {first?.title ?? "Order items"}
                       </p>
+                      {variantText && (
+                        <p className="mt-0.5 line-clamp-1 text-[10px] font-bold text-[#E8546B]">
+                          {variantText}
+                        </p>
+                      )}
                       <p className="mt-1 text-[10px] text-[#6B5558]">
                         {items.length} {items.length === 1 ? "item" : "items"}
                         {order.address?.district ? ` · ${order.address.district}` : ""}

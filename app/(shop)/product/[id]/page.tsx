@@ -112,7 +112,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     if (!product || btnState !== "idle") return;
     setBtnState("loading");
     setTimeout(() => {
-      const variantText = [selectedColor?.label, selectedSize].filter(Boolean).join(" / ");
+      const variantText = [selectedColor?.label, selectedSize]
+        .filter((v) => v && v !== "One Size")
+        .join(" / ");
       cart.add(
         product.id,
         selectedColor?.label || "Default",
@@ -121,7 +123,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         variantText || undefined,
         currentPrice,
         product.title,
-        product.image
+        selectedImage || product.image
       );
       setBtnState("success");
       setTimeout(() => setBtnState("idle"), 2000);
@@ -130,7 +132,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   const handleBuyNow = () => {
     if (!product) return;
-    const variantText = [selectedColor?.label, selectedSize].filter(Boolean).join(" / ");
+    const variantText = [selectedColor?.label, selectedSize]
+      .filter((v) => v && v !== "One Size")
+      .join(" / ");
     cart.add(
       product.id,
       selectedColor?.label || "Default",
@@ -139,7 +143,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       variantText || undefined,
       currentPrice,
       product.title,
-      product.image
+      selectedImage || product.image
     );
     router.push("/checkout");
   };
@@ -322,7 +326,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
         <div className="w-full h-2 bg-[#FFF6F6]" />
 
-        {/* Shipping Notice - Matches Desktop perfectly but fits mobile */}
+        {/* Shipping Notice */}
         <div className="px-4 py-4">
           <div className="rounded-2xl border border-[#FAD4DD] bg-white p-5 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
@@ -351,7 +355,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
         <div className="w-full h-2 bg-[#FFF6F6]" />
 
-        {/* Product Specifications (Mobile) */}
+        {/* Specs */}
         <div className="px-4 py-5 mb-10">
           <h3 className="text-[14px] font-bold text-[#2B1A24] mb-2">Specifications</h3>
           {product.specs && product.specs.length > 0 ? (
@@ -371,7 +375,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       </div>
 
       {/* ============================================================
-          💻 DESKTOP VIEW (1024px and up — unchanged)
+          💻 DESKTOP VIEW (1024px and up)
           ============================================================ */}
       <div className="hidden lg:block min-h-screen bg-[#FFF6F6] pb-20">
         <div className="mx-auto max-w-[1400px] px-4 py-4 text-xs text-[#6B5558] flex items-center gap-2">
@@ -533,9 +537,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         </div>
       </div>
 
-      {/* ============================================================
-          🚨 SHIPPING MODAL
-          ============================================================ */}
+      {/* SHIPPING MODAL */}
       {shippingModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={() => setShippingModalOpen(false)}>
           <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
