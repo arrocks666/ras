@@ -331,12 +331,26 @@ export default function AccountPage() {
               <span className="flex-1 text-sm font-bold text-[#2B1A24]">Help & Support</span>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#A88F92]"><polyline points="9 18 15 12 9 6" /></svg>
             </Link>
+
+            {/* LOGOUT — visible on mobile + desktop */}
+            <button
+              onClick={handleLogout}
+              className="flex w-full items-center gap-4 rounded-2xl border border-[#E8546B]/30 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#E8546B] hover:shadow-md"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FDE8EC] text-xl">🚪</div>
+              <span className="flex-1 text-left text-sm font-bold text-[#E8546B]">Logout</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#E8546B]">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+            </button>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] font-medium text-[#6B5558]">
             <a href="#" className="hover:text-[#E8546B]">Privacy Policy</a><span>|</span>
             <a href="#" className="hover:text-[#E8546B]">Terms & Conditions</a><span>|</span>
-            <a href="#" className="hover:text-[#E8546B]">Shipping Policy</a><span>|</span>
+            <a href="#" className="hover:text-[#E8546B]">Shipping Policy</a>
           </div>
 
           <p className="text-center text-[10px] font-medium text-[#A88F92]">Ratri&apos;s Artistry Shop v0.1.0 • Made for Bangladesh 🇧🇩</p>

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getUserOrders } from "@/lib/firestoreOrders";
 import { formatBDT } from "@/lib/data";
+import { imgSrc } from "@/lib/img";
 
 type ListedOrder = {
   id: string;
@@ -137,6 +138,7 @@ export default function OrdersPage() {
               const due = Math.max(0, (order.total ?? 0) - paid);
               const items = order.items ?? [];
               const first = items[0];
+              const firstImage = imgSrc(first?.image ?? "");
               const date = new Date(order.createdAt).toLocaleDateString("en-GB", {
                 day: "2-digit",
                 month: "short",
@@ -161,8 +163,8 @@ export default function OrdersPage() {
 
                   <div className="flex items-center gap-3 px-4 py-3">
                     <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#FAD4DD] bg-[#FFF6F6] p-1">
-                      {first?.image ? (
-                        <img src={first.image} alt="" className="h-full w-full object-contain mix-blend-multiply" />
+                      {firstImage ? (
+                        <img src={firstImage} alt="" referrerPolicy="no-referrer" className="h-full w-full object-contain mix-blend-multiply" />
                       ) : (
                         <span className="text-xl">🎁</span>
                       )}
