@@ -50,8 +50,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-white text-[#2B1A24] transition-transform duration-300 md:relative md:translate-x-0 shadow-xl md:shadow-none ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="flex h-full flex-col border-r border-[#FAD4DD]">
-          
-          {/* ✅ BIGGER HEADER */}
+
           <div className="flex items-center gap-4 border-b border-[#FAD4DD] px-5 py-6 bg-gradient-to-r from-[#FFF6F6] to-white">
             {logoUrl ? (
               <img src={logoUrl} alt="logo" className="h-14 w-14 flex-shrink-0 rounded-xl object-contain shadow-sm" />
@@ -60,7 +59,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             )}
             <div className="leading-tight">
               <div className="text-xl font-bold">
-                <span className="text-[#2B1A24]">Ratry's </span>
+                <span className="text-[#2B1A24]">Ratri&rsquo;s </span>
                 <span className="text-[#E8546B]">Admin</span>
               </div>
               <p className="text-[11px] font-bold uppercase tracking-wider text-[#A88F92]">Command Center</p>
@@ -75,8 +74,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <li key={item.href}>
                     <Link href={item.href} onClick={() => setSidebarOpen(false)}
                       className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition-all duration-200 ${
-                        active 
-                          ? "bg-[#E8546B] text-white shadow-[0_4px_20px_-4px_rgba(232,84,107,0.5)] scale-[1.02]" 
+                        active
+                          ? "bg-[#E8546B] text-white shadow-[0_4px_20px_-4px_rgba(232,84,107,0.5)] scale-[1.02]"
                           : "text-[#6B5558] hover:bg-[#FFF6F6] hover:text-[#E8546B] hover:translate-x-1"
                       }`}>
                       <span className="text-xl">{item.icon}</span>
@@ -111,7 +110,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           ) : (
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#E8546B] text-sm font-bold text-white">R</div>
           )}
-          <div className="text-base font-bold"><span className="text-[#2B1A24]">Ratry's</span> <span className="text-[#E8546B]">Admin</span></div>
+          <div className="text-base font-bold"><span className="text-[#2B1A24]">Ratri&rsquo;s</span> <span className="text-[#E8546B]">Admin</span></div>
         </header>
         <main className="flex-1 p-4 md:p-8">{children}</main>
       </div>

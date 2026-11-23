@@ -21,8 +21,8 @@ const money = (value: unknown): string => {
 
 export async function generateInvoice(
   order: Order,
-  storeName: string = "Ratry's Artistry Shop",
-  storeUrl: string = "ratrysartistry.com",
+  storeName: string = "Ratri's Artistry Shop",
+  storeUrl: string = "ratrisartistry.com",
   logoUrl?: string
 ): Promise<void> {
 

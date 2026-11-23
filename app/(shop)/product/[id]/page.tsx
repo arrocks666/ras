@@ -113,7 +113,16 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     setBtnState("loading");
     setTimeout(() => {
       const variantText = [selectedColor?.label, selectedSize].filter(Boolean).join(" / ");
-      cart.add(product.id, selectedColor?.label || "Default", selectedSize || "One Size", Number(quantity) || 1, variantText || undefined);
+      cart.add(
+        product.id,
+        selectedColor?.label || "Default",
+        selectedSize || "One Size",
+        Number(quantity) || 1,
+        variantText || undefined,
+        currentPrice,
+        product.title,
+        product.image
+      );
       setBtnState("success");
       setTimeout(() => setBtnState("idle"), 2000);
     }, 600);
@@ -122,7 +131,16 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const handleBuyNow = () => {
     if (!product) return;
     const variantText = [selectedColor?.label, selectedSize].filter(Boolean).join(" / ");
-    cart.add(product.id, selectedColor?.label || "Default", selectedSize || "One Size", Number(quantity) || 1, variantText || undefined);
+    cart.add(
+      product.id,
+      selectedColor?.label || "Default",
+      selectedSize || "One Size",
+      Number(quantity) || 1,
+      variantText || undefined,
+      currentPrice,
+      product.title,
+      product.image
+    );
     router.push("/checkout");
   };
 
@@ -516,7 +534,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       </div>
 
       {/* ============================================================
-          🚨 SHIPPING MODAL (MOVED OUTSIDE SO IT WORKS ON BOTH MOBILE AND DESKTOP)
+          🚨 SHIPPING MODAL
           ============================================================ */}
       {shippingModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={() => setShippingModalOpen(false)}>

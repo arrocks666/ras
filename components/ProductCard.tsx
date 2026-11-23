@@ -23,7 +23,16 @@ export default function ProductCard({ product }: { product: Product }) {
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    cart.add(product.id, "Default", "One Size", 1);
+    cart.add(
+      product.id,
+      "Default",
+      "One Size",
+      1,
+      undefined,
+      product.price,
+      product.title,
+      product.image
+    );
   };
 
   const toggleWishlist = (e: React.MouseEvent) => {

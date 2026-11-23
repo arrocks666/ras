@@ -21,8 +21,11 @@ export default function CartPage() {
         return { key: `${item.productId}-${item.colorId}-${item.size || ""}`, productId: item.productId, title: item.liveSnapshot.title, image: item.liveSnapshot.image, price: item.liveSnapshot.price, colorId: item.colorId, colorLabel: item.colorLabel, size: item.size, quantity: item.quantity, lineTotal: item.liveSnapshot.price * item.quantity, href: `/live-product/${item.productId}`, isLive: true };
       }
       const product = products.find((p) => p.id === item.productId);
-      if (!product) return null;
-      return { key: `${item.productId}-${item.colorId}-${item.size || ""}`, productId: product.id, title: product.title, image: product.image, price: product.price, colorId: item.colorId, colorLabel: item.colorLabel, size: item.size, quantity: item.quantity, lineTotal: product.price * item.quantity, href: `/product/${product.id}`, isLive: false };
+      const unitPrice = item.price ?? product?.price ?? 0;
+      const title = item.title ?? product?.title ?? "Product";
+      const image = item.image ?? product?.image ?? "";
+      if (!product && !item.price) return null;
+      return { key: `${item.productId}-${item.colorId}-${item.size || ""}`, productId: item.productId, title, image, price: unitPrice, colorId: item.colorId, colorLabel: item.colorLabel, size: item.size, quantity: item.quantity, lineTotal: unitPrice * item.quantity, href: `/product/${item.productId}`, isLive: false };
     }).filter(Boolean) as Array<{ key: string; productId: string; title: string; image: string; price: number; colorId: string; colorLabel?: string; size?: string; quantity: number; lineTotal: number; href: string; isLive: boolean; }>;
   }, [cart.items, products]);
 
@@ -69,11 +72,8 @@ export default function CartPage() {
 
   return (
     <>
-      {/* ============================================================
-          📱 MOBILE VIEW (Matches Figma exactly)
-          ============================================================ */}
+      {/* MOBILE */}
       <div className="lg:hidden min-h-screen bg-[#FFF6F6] pb-64">
-        {/* Header */}
         <div className="sticky top-14 z-40 bg-white/95 backdrop-blur-md px-4 py-3 flex items-center gap-3 border-b border-[#FAD4DD]/50">
           <button onClick={() => router.back()} className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FFF6F6] text-[#2B1A24]">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6" /></svg>
@@ -81,7 +81,6 @@ export default function CartPage() {
           <h1 className="flex-1 font-serif text-[17px] font-bold text-[#E4216F]">My Cart ({cartRows.length})</h1>
         </div>
 
-        {/* Select All Bar */}
         <div className="bg-white border-b border-[#FAD4DD]/50 px-4 py-3 flex items-center gap-3">
           <button onClick={toggleAll} className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded border-2 transition ${allSelected ? "border-[#E4216F] bg-[#E4216F]" : "border-[#FAD4DD] bg-white"}`}>
             {allSelected && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>}
@@ -90,7 +89,6 @@ export default function CartPage() {
           <span className="ml-auto text-[11px] font-medium text-[#6B5558]">{selectedRows.length} of {cartRows.length} selected</span>
         </div>
 
-        {/* Cart Items */}
         <div className="px-4 py-4 space-y-3">
           {cartRows.map((row) => {
             const isEditing = editingQty[row.key] !== undefined;
@@ -138,7 +136,6 @@ export default function CartPage() {
           })}
         </div>
 
-        {/* Sticky Bottom Bar — sits ABOVE the floating bottom nav */}
         <div className="fixed bottom-[calc(94px+env(safe-area-inset-bottom))] left-0 right-0 z-40 mx-auto max-w-[430px] rounded-t-2xl border-t border-[#FAD4DD] bg-white p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[13px] font-medium text-[#6B5558]">Subtotal</span>
@@ -150,9 +147,7 @@ export default function CartPage() {
         </div>
       </div>
 
-      {/* ============================================================
-          💻 DESKTOP VIEW (100% UNCHANGED)
-          ============================================================ */}
+      {/* DESKTOP */}
       <div className="hidden lg:block min-h-screen bg-[#FFF6F6] pb-48">
         <CartTopBar count={cartRows.length} onClear={() => cart.clear()} />
         <div className="sticky top-[56px] z-30 border-b border-[#FAD4DD] bg-white px-4 py-3 shadow-sm md:top-[60px]">

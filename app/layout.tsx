@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Poppins, Playfair_Display } from "next/font/google";
 import "./globals.css";
+import "./premium.css";
 
 import { AuthProvider } from "@/lib/AuthContext";
 import { ProductsProvider } from "@/lib/ProductsContext";
@@ -15,8 +16,8 @@ const poppins = Poppins({ weight: ["300", "400", "500", "600", "700"], variable:
 const playfair = Playfair_Display({ variable: "--font-playfair", subsets: ["latin"], display: "swap" });
 
 const SITE_URL = "https://ratrisartistry.com";
-const SITE_NAME = "Ratris Artistry";
-const TITLE = "Ratris Artistry — Trendy Products from China to Bangladesh";
+const SITE_NAME = "Ratri's Artistry";
+const TITLE = "Ratri's Artistry — Trendy Products from China to Bangladesh";
 const SITE_DESCRIPTION =
   "Trendy imported fashion, jewelry and accessories from China — delivered all over Bangladesh. Cash on delivery, bKash and Nagad accepted.";
 
@@ -37,7 +38,7 @@ export const metadata: Metadata = {
   },
   description: SITE_DESCRIPTION,
   keywords: [
-    "Ratris Artistry",
+    "Ratri's Artistry",
     "online shop Bangladesh",
     "imported jewelry Bangladesh",
     "trendy accessories",
@@ -55,10 +56,10 @@ export const metadata: Metadata = {
     title: TITLE,
     description: SITE_DESCRIPTION,
     url: "/",
-    locale: "en_US",
+    locale: "en_US", images: [{ url: "/og.png", width: 1200, height: 630, type: "image/png" }],
   },
   twitter: {
-    card: "summary_large_image",
+    card: "summary_large_image", images: ["/og.png"],
     title: TITLE,
     description: SITE_DESCRIPTION,
   },
@@ -73,8 +74,15 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: [{ url: "/favicon.ico" }],
-    apple: [{ url: "/logo.png" }],
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/logo.png", type: "image/png", sizes: "512x512" },
+      { url: "/logo.png", type: "image/png", sizes: "192x192" },
+      { url: "/logo.png", type: "image/png", sizes: "48x48" },
+    ],
+    shortcut: [{ url: "/favicon.ico" }],
+    apple: [{ url: "/logo.png", sizes: "180x180" }],
+    other: [{ rel: "mask-icon", url: "/logo.png" }],
   },
 };
 

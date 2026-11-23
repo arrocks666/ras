@@ -1,0 +1,114 @@
+/* ============================================================
+   Premium interaction polish — smooth scrolling & feel
+   ============================================================ */
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: 5rem;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior-y: none;
+}
+
+/* no blue flash on tap (mobile) */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* iOS momentum + smooth inner scrolling */
+.overflow-y-auto,
+.overflow-y-scroll,
+.overflow-x-auto,
+.overflow-x-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* calm, premium press feedback */
+button,
+a,
+[role="button"] {
+  transition: transform 0.18s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.18s ease,
+    color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+  touch-action: manipulation;
+}
+
+button:active,
+a:active,
+[role="button"]:active {
+  transform: scale(0.985);
+}
+
+/* keyboard focus only */
+:focus {
+  outline: none;
+}
+:focus-visible {
+  outline: 2px solid #e8546b;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* page fade-in so navigation feels soft */
+@keyframes premiumFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+main {
+  animation: premiumFadeUp 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* images never pop in harshly */
+img {
+  transition: opacity 0.25s ease;
+}
+
+/* finer scrollbar (desktop) */
+@media (hover: hover) and (pointer: fine) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #f7c6d3 transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #f7c6d3;
+    border-radius: 999px;
+    border: 2px solid #fff6f6;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #ef9fb4;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+/* respect users who don't want motion */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -8,6 +8,10 @@ export type CartItem = {
   colorLabel?: string;
   size?: string;
   quantity: number;
+  /** price shown on the product page at the moment of adding (variant-aware) */
+  price?: number;
+  title?: string;
+  image?: string;
   isLive?: boolean;
   liveSnapshot?: {
     id: string;
@@ -38,7 +42,10 @@ type CartContextType = {
     colorId: string,
     size: string | undefined,
     quantity?: number,
-    colorLabel?: string
+    colorLabel?: string,
+    price?: number,
+    title?: string,
+    image?: string
   ) => void;
   addLive: (
     product: {
@@ -96,50 +103,77 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, [items, hydrated]);
 
-  const add = (
-    productId: string,
-    colorId: string,
-    size: string | undefined,
+  const add: CartContextType["add"] = (
+    productId,
+    colorId,
+    size,
     quantity = 1,
-    colorLabel?: string
+    colorLabel,
+    price,
+    title,
+    image
   ) => {
     setItems((prev) => {
       const existing = prev.find((x) => sameLine(x, productId, colorId, size));
+
       if (existing) {
         return prev.map((x) =>
           sameLine(x, productId, colorId, size)
-            ? { ...x, quantity: x.quantity + quantity }
+            ? {
+                ...x,
+                quantity: x.quantity + quantity,
+                price: price ?? x.price,
+                title: title ?? x.title,
+                image: image ?? x.image,
+                colorLabel: colorLabel ?? x.colorLabel,
+              }
             : x
         );
       }
-      return [...prev, { productId, colorId, colorLabel, size, quantity }];
+
+      return [
+        ...prev,
+        {
+          productId,
+          colorId,
+          colorLabel,
+          size,
+          quantity,
+          ...(typeof price === "number" && price > 0 ? { price } : {}),
+          ...(title ? { title } : {}),
+          ...(image ? { image } : {}),
+        },
+      ];
     });
   };
 
-  const addLive = (
-    product: {
-      id: string; title: string; subtitle?: string; price: number; priceMax?: number;
-      oldPrice: number; discount: number; image: string; rating: number; reviews: number;
-      description: string; sourceUrl?: string; moq?: number; supplierName?: string;
-      priceOriginalCny?: number; colors?: { id: string; label: string; hex: string; image?: string }[];
-      sizes?: string[];
-    },
-    colorId: string,
-    size: string | undefined,
+  const addLive: CartContextType["addLive"] = (
+    product,
+    colorId,
+    size,
     quantity = 1,
-    colorLabel?: string
+    colorLabel
   ) => {
     setItems((prev) => {
       const existing = prev.find(
-        (x) => x.productId === product.id && x.colorId === colorId && (x.size ?? "") === (size ?? "") && x.isLive === true
+        (x) =>
+          x.productId === product.id &&
+          x.colorId === colorId &&
+          (x.size ?? "") === (size ?? "") &&
+          x.isLive === true
       );
+
       if (existing) {
         return prev.map((x) =>
-          x.productId === product.id && x.colorId === colorId && (x.size ?? "") === (size ?? "") && x.isLive === true
+          x.productId === product.id &&
+          x.colorId === colorId &&
+          (x.size ?? "") === (size ?? "") &&
+          x.isLive === true
             ? { ...x, quantity: x.quantity + quantity }
             : x
         );
       }
+
       return [
         ...prev,
         {
@@ -150,12 +184,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
           quantity,
           isLive: true,
           liveSnapshot: {
-            id: product.id, title: product.title, subtitle: product.subtitle, price: product.price,
-            priceMax: product.priceMax, oldPrice: product.oldPrice, discount: product.discount,
-            image: product.image, rating: product.rating, reviews: product.reviews,
-            description: product.description, sourceUrl: product.sourceUrl, moq: product.moq,
-            supplierName: product.supplierName, priceOriginalCny: product.priceOriginalCny,
-            colors: product.colors, sizes: product.sizes,
+            id: product.id,
+            title: product.title,
+            subtitle: product.subtitle,
+            price: product.price,
+            priceMax: product.priceMax,
+            oldPrice: product.oldPrice,
+            discount: product.discount,
+            image: product.image,
+            rating: product.rating,
+            reviews: product.reviews,
+            description: product.description,
+            sourceUrl: product.sourceUrl,
+            moq: product.moq,
+            supplierName: product.supplierName,
+            priceOriginalCny: product.priceOriginalCny,
+            colors: product.colors,
+            sizes: product.sizes,
           },
         },
       ];

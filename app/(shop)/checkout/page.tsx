@@ -24,7 +24,7 @@ import {
 } from "@/lib/firestoreSettings";
 
 const PAYMENT_METHODS = [
-  { id: "cod", label: "Cash on Delivery", icon: "💵", note: "Pay when you receive" },
+  { id: "cod", label: "Cash on Delivery", icon: "💵", note: "20% advance required · rest on delivery" },
   { id: "bkash", label: "bKash", icon: "📱", note: "Send money to our number" },
   { id: "nagad", label: "Nagad", icon: "💳", note: "Send money to our number" },
   { id: "bank", label: "Bank Transfer", icon: "🏦", note: "Transfer to our bank account" },
@@ -61,7 +61,7 @@ function CheckoutContent() {
   const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_SETTINGS);
-  
+
   const [transactionId, setTransactionId] = useState("");
   const [senderNumber, setSenderNumber] = useState("");
   const [senderAccount, setSenderAccount] = useState("");
@@ -97,8 +97,18 @@ function CheckoutContent() {
         continue;
       }
       const product = products.find((p) => p.id === item.productId);
-      if (!product) continue;
-      result.push({ productId: product.id, colorId: item.colorId, size: item.size, quantity: item.quantity, price: product.price, title: product.title, image: product.image, isLive: false });
+      const unitPrice = item.price ?? product?.price ?? 0;
+      if (!product && !item.price) continue;
+      result.push({
+        productId: item.productId,
+        colorId: item.colorId,
+        size: item.size,
+        quantity: item.quantity,
+        price: unitPrice,
+        title: item.title ?? product?.title ?? "Product",
+        image: item.image ?? product?.image ?? "",
+        isLive: false,
+      });
     }
     return result;
   }, [cart.items, wantedKeys, products]);
@@ -107,6 +117,7 @@ function CheckoutContent() {
   const servicesTotal = selectedServices.reduce((sum, s) => sum + s.price, 0);
   const discountAmount = appliedCoupon ? calculateCouponDiscount(appliedCoupon, subtotal) : 0;
   const total = subtotal - discountAmount + servicesTotal;
+  const codAdvance = Math.round(total * 0.2);
 
   // ✅ USE DYNAMIC PRICES FROM SETTINGS
   const AVAILABLE_SERVICES: OrderService[] = [
@@ -253,6 +264,19 @@ function CheckoutContent() {
                   ))}
                 </div>
 
+                {payment === "cod" && (
+                  <div className="mt-5 rounded-2xl border border-[#E8546B]/30 bg-[#FFF6F6] p-4 animate-fade-down">
+                    <p className="text-sm font-bold text-[#2B1A24]">20% advance required</p>
+                    <p className="mt-1 text-[11.5px] leading-relaxed text-[#6B5558]">
+                      Cash on Delivery orders are confirmed with a 20% advance payment (bKash / Nagad). The remaining 80% is paid in cash to the delivery rider.
+                    </p>
+                    <div className="mt-3 flex items-center justify-between rounded-xl bg-white px-3 py-2">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#6B5558]">Advance for this order</span>
+                      <span className="text-base font-bold text-[#E8546B]">{formatBDT(codAdvance)}</span>
+                    </div>
+                  </div>
+                )}
+
                 {(payment === "bkash" || payment === "nagad") && (
                   <div className="mt-5 rounded-2xl border border-[#E8546B]/30 bg-[#FFF6F6] p-4 space-y-4 animate-fade-down">
                     <div className="text-center">
@@ -397,6 +421,12 @@ function CheckoutContent() {
                     <span className="font-bold text-[#2B1A24]">Total Payable</span>
                     <span className="text-xl font-bold text-[#E8546B]">{formatBDT(total)}</span>
                   </div>
+                  {payment === "cod" && (
+                    <div className="mt-2 flex justify-between text-[11.5px] text-[#6B5558]">
+                      <span>Advance needed now (20%)</span>
+                      <span className="font-bold text-[#E8546B]">{formatBDT(codAdvance)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 

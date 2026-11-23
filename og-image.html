@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Ratri's Artistry — share image 1200×630</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1200px;height:630px;overflow:hidden;background:#FFEFF3}
+
+  .card{
+    position:relative;width:1200px;height:630px;overflow:hidden;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:64px 72px;
+    background:
+      radial-gradient(65% 80% at 92% -10%, rgba(232,84,107,.30), transparent 60%),
+      radial-gradient(55% 70% at -10% 110%, rgba(255,139,154,.35), transparent 60%),
+      linear-gradient(135deg,#FFF9FA 0%,#FFF1F5 55%,#FFE3EC 100%);
+    font-family:"Inter",system-ui,sans-serif;color:#2B1A24;
+  }
+
+  .left{position:relative;z-index:2;max-width:720px}
+
+  .badge{
+    display:inline-flex;align-items:center;gap:10px;
+    padding:9px 18px;border-radius:999px;
+    background:rgba(232,84,107,.12);border:1px solid rgba(232,84,107,.35);
+    font-size:15px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#C21C5E;
+  }
+  .badge i{width:8px;height:8px;border-radius:50%;background:#E8546B}
+
+  h1{
+    margin-top:26px;font-family:"Playfair Display",Georgia,serif;
+    font-size:86px;line-height:1.02;font-weight:700;letter-spacing:-1px;
+  }
+  h1 span{color:#E8546B}
+
+  p{
+    margin-top:24px;font-size:27px;line-height:1.5;color:#6B5558;max-width:640px;
+  }
+
+  .chips{display:flex;gap:12px;margin-top:34px;flex-wrap:wrap}
+  .chip{
+    padding:12px 22px;border-radius:999px;background:#fff;
+    border:1px solid #FAD4DD;font-size:18px;font-weight:700;color:#C21C5E;
+    box-shadow:0 8px 20px -12px rgba(232,84,107,.6);
+  }
+
+  .domain{
+    margin-top:34px;font-size:20px;font-weight:800;letter-spacing:.04em;color:#2B1A24;
+    display:flex;align-items:center;gap:10px;
+  }
+  .domain::before{content:"";width:34px;height:3px;border-radius:2px;background:#E8546B}
+
+  /* right visual */
+  .badgeBig{
+    position:relative;z-index:2;width:300px;height:300px;border-radius:50%;
+    background:linear-gradient(150deg,#FF7A93,#E8546B 55%,#C21C5E);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    box-shadow:0 40px 80px -30px rgba(232,84,107,.9);
+    flex:none;
+  }
+  .badgeBig p.lbl{font-size:14px;font-weight:800;letter-spacing:.34em;color:rgba(255,255,255,.85);text-transform:uppercase}
+  .badgeBig p.num{font-family:"Playfair Display",serif;font-size:104px;font-weight:700;line-height:1;color:#fff;margin-top:6px}
+  .badgeBig p.off{font-size:18px;font-weight:800;letter-spacing:.4em;color:rgba(255,255,255,.92);margin-top:4px}
+  .badgeBig::after{content:"";position:absolute;inset:14px;border-radius:50%;border:1px solid rgba(255,255,255,.28)}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="left">
+      <div class="badge"><i></i>Ratri&rsquo;s Artistry</div>
+
+      <h1>Trendy products<br />from China —<br /><span>delivered to you.</span></h1>
+
+      <p>Fashion, jewelry and accessories picked weekly, priced in BDT, shipped nationwide.</p>
+
+      <div class="chips">
+        <span class="chip">Cash on delivery</span>
+        <span class="chip">bKash · Nagad</span>
+        <span class="chip">15–25 days</span>
+      </div>
+
+      <div class="domain">ratrisartistry.com</div>
+    </div>
+
+    <div class="badgeBig">
+      <p class="lbl">Winter sale</p>
+      <p class="num">30%</p>
+      <p class="off">OFF</p>
+    </div>
+  </div>
+</body>
+</html>

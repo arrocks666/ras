@@ -7,7 +7,8 @@ const FAQS = [
   { q: "How do I place an order?", a: "Browse products, add them to your cart, and proceed to checkout. You can pay via bKash, Nagad, Bank Transfer, or Cash on Delivery." },
   { q: "How long does shipping take?", a: "Delivery typically takes 15-25 business days from China to Bangladesh." },
   { q: "How can I track my order?", a: "Once your order is shipped, you can track it on the Track Order page using your order ID." },
-  { q: "What payment methods do you accept?", a: "We accept bKash, Nagad, Bank Transfer, and Cash on Delivery (COD)." },
+  { q: "What payment methods do you accept?", a: "We accept bKash, Nagad, Bank Transfer, and Cash on Delivery (COD). COD orders require a 20% advance payment; the remaining 80% is paid when you receive the parcel." },
+  { q: "Why do you need a 20% advance for COD?", a: "Because we import the item from China specifically for your order. The 20% advance confirms the order, and you pay the rest in cash when the parcel reaches you." },
   { q: "What is your return policy?", a: "You can return damaged or incorrect items within 7 days of delivery. See our Returns & Refunds page for details." },
   { q: "Is shipping charged separately?", a: "Yes, shipping charges are calculated based on the weight and size of your order and will be added after the product is shipped." },
 ];
