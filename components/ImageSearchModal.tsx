@@ -114,7 +114,7 @@ export default function ImageSearchModal({ isOpen, onClose }: { isOpen: boolean;
   const handleSearch = async () => {
     if (!file) return;
     setLoading(true);
-    setStatus("Searching 1688 via Image... (This can take up to 2 minutes)");
+    setStatus("Searching 1688 by image… usually 20–40 seconds.");
     setResults([]);
 
     try {
@@ -127,39 +127,59 @@ export default function ImageSearchModal({ isOpen, onClose }: { isOpen: boolean;
 
       setStatus("Finding matches...");
 
+      const startedAt = Date.now();
       let attempts = 0;
-      const interval = setInterval(async () => {
+      let busy = false;
+      let interval: ReturnType<typeof setInterval> | undefined;
+
+      const tick = async () => {
+        if (busy) return;
+        busy = true;
         try {
-          const statusRes = await fetch(`/api/image-search/status?jobId=${jobId}`);
+          const statusRes = await fetch(`/api/image-search/status?jobId=${jobId}`, { cache: "no-store" });
           const data = await statusRes.json();
 
-          if (data.status === "done" && data.products?.length > 0) {
-            clearInterval(interval);
-            setStatus("");
-            setLoading(false);
-
+          // Show every product the moment it lands — never wait for the slowest one.
+          if (data.products?.length > 0) {
             const found = data.products.slice(0, 3);
             setResults(found);
-
-            const prices: Record<string, number> = {};
-            found.forEach((p: any) => { prices[p.id] = p.price; });
-            setEditedPrices(prices);
-
-          } else if (data.status === "error") {
-            clearInterval(interval);
-            setStatus(`Error: ${data.error}`);
-            setLoading(false);
+            setEditedPrices((prev) => {
+              const next: Record<string, number> = { ...prev };
+              for (const p of found) if (next[p.id] === undefined) next[p.id] = p.price;
+              return next;
+            });
           }
+
+          if (data.status === "done" || data.status === "error") {
+            if (interval) clearInterval(interval);
+            setLoading(false);
+            if (data.products?.length > 0) setStatus("");
+            else setStatus(data.error ? `Error: ${data.error}` : "No matching products found.");
+            return;
+          }
+
+          const secs = Math.round((Date.now() - startedAt) / 1000);
+          setStatus(
+            data.products?.length > 0
+              ? `Found ${data.products.length} — still loading the rest… (${secs}s)`
+              : `Finding matches... (${secs}s)`
+          );
 
           attempts++;
-          // ✅ Increased timeout from 30 to 150 attempts (5 minutes)
-          if (attempts > 150) {
-            clearInterval(interval);
-            setStatus("Search timed out. The server took too long.");
+          if (attempts > 90) {
+            if (interval) clearInterval(interval);
             setLoading(false);
+            setStatus("Search timed out. The server took too long.");
           }
-        } catch (err) { console.error(err); }
-      }, 2000);
+        } catch (err) {
+          console.error(err);
+        } finally {
+          busy = false;
+        }
+      };
+
+      interval = setInterval(tick, 2000);
+      tick();
 
     } catch (err: any) {
       setStatus(err.message || "Failed.");
@@ -283,6 +303,11 @@ export default function ImageSearchModal({ isOpen, onClose }: { isOpen: boolean;
 
           {results.length > 0 && (
             <div className="space-y-4 animate-fade-in">
+              {status && (
+                <div className={`p-3 rounded-xl text-sm font-medium ${status.includes("Error") ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"}`}>
+                  {status}
+                </div>
+              )}
               <div className="bg-[#FFF6F6] p-4 rounded-xl border border-[#FAD4DD] space-y-3">
                 <h3 className="text-sm font-bold text-[#2B1A24]">Select where to save these products:</h3>
                 <div className="grid grid-cols-2 gap-3">

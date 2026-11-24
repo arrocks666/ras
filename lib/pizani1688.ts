@@ -137,7 +137,7 @@ function resolvePriceCny(p: RawProductInfo, offerId: string): number {
 export async function fetchPizani1688(offerId: string): Promise<PizaniProduct | null> {
   const productUrl = `https://detail.1688.com/offer/${offerId}.html`;
   let items: RawResponse[];
-  try { items = await callPizani(productUrl); }
+  try { items = await callPizani(productUrl, 100); }
   catch (err: any) { return null; }
 
   const first = items[0];

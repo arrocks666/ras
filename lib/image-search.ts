@@ -20,6 +20,28 @@ const PRODUCTS_WANTED = 3;
 const ASK_FOR = 5;
 const MIN_PRICE_BDT = 20;
 
+// Hard caps: one slow / dead 1688 listing must never stall the whole search.
+const PIZANI_TIMEOUT_MS = 100_000;
+const PARSEBIRD_TIMEOUT_MS = 45_000;
+
+/** Resolves to `fallback` if the promise takes longer than `ms`. */
+function withTimeout<T>(p: Promise<T>, ms: number, label: string, fallback: T): Promise<T> {
+  return new Promise<T>((resolve) => {
+    const timer = setTimeout(() => {
+      console.warn(`[image-search] ${label} exceeded ${Math.round(ms / 1000)}s — skipping it`);
+      resolve(fallback);
+    }, ms);
+    p.then((v) => {
+      clearTimeout(timer);
+      resolve(v);
+    }).catch((err) => {
+      clearTimeout(timer);
+      console.warn(`[image-search] ${label} failed:`, err?.message || err);
+      resolve(fallback);
+    });
+  });
+}
+
 type RawListing = {
   offerId?: string;
   productId?: string;
@@ -376,17 +398,31 @@ export async function runImageSearchJob(jobId: string, imageBase64OrUrl: string)
     const savedProducts: LiveProduct[] = [];
 
     const tasks = offerIds.map(async (offerId) => {
+      const t0 = Date.now();
       try {
-        const [detail, parsebirdData] = await Promise.all([
-          fetchPizani1688(offerId),
-          parsebirdByOfferId(offerId).catch(() => null),
-        ]);
+        // 1. Detail fetch — the ONLY thing the card needs.
+        const detail = await withTimeout(fetchPizani1688(offerId), PIZANI_TIMEOUT_MS, `pizani ${offerId}`, null);
         if (detail) {
-          const live = mergeToLive(detail, parsebirdData);
-          pushProduct(jobId, live);
-          savedProducts.push(live);
-          await saveLiveProduct(live); // Keep cache save
-          // ❌ REMOVED: await saveProductToStore(live);
+          // Show it immediately instead of waiting for the enrichment run.
+          const provisional = mergeToLive(detail, null);
+          pushProduct(jobId, provisional);
+          savedProducts.push(provisional);
+          console.log(`[job ${jobId}] ✓ ${offerId} shown in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+
+          // 2. Enrichment (weight + exact SKU prices) — capped, and mutates the
+          //    product the panel is already showing, so nothing jumps around.
+          const pb = await withTimeout(
+            parsebirdByOfferId(offerId).catch(() => null),
+            PARSEBIRD_TIMEOUT_MS,
+            `parsebird ${offerId}`,
+            null
+          );
+          if (pb) {
+            Object.assign(provisional, mergeToLive(detail, pb));
+            console.log(`[job ${jobId}] ✚ ${offerId} enriched in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
+          }
+
+          await saveLiveProduct(provisional);
           return;
         }
       } catch (err) { console.warn(`[job ${jobId}] ✗ ${offerId} failed:`, err); }
@@ -402,14 +438,14 @@ export async function runImageSearchJob(jobId: string, imageBase64OrUrl: string)
         if (fallback) {
           pushProduct(jobId, fallback);
           savedProducts.push(fallback);
-          await saveLiveProduct(fallback); // Keep cache save
-          // ❌ REMOVED: await saveProductToStore(fallback);
+          await saveLiveProduct(fallback);
         }
       }
     });
 
-    await Promise.all(tasks);
+    await Promise.allSettled(tasks);
     if (savedProducts.length > 0) await saveSearchCache(imageHash, savedProducts.map((p) => p.id));
+    console.log(`[job ${jobId}] done with ${savedProducts.length} product(s)`);
     updateJob(jobId, { status: "done" });
   } catch (err: any) {
     console.error(`[job ${jobId}] failed:`, err);
