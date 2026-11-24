@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { doc, setDoc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { CATEGORIES } from "@/lib/categories";
@@ -223,9 +224,24 @@ export default function ImageSearchModal({ isOpen, onClose }: { isOpen: boolean;
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+  const modal = (
+    <div
+      onClick={(e) => { if (e.target === e.currentTarget && !loading) onClose(); }}
+      className="flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+      style={{ position: "fixed", top: 0, right: 0, bottom: 0, left: 0, zIndex: 9999 }}
+    >
+      <div
+        className="rounded-2xl bg-white p-6 shadow-2xl"
+        style={{
+          position: "relative",
+          zIndex: 10000,
+          width: "100%",
+          maxWidth: 672,
+          maxHeight: "90vh",
+          overflowY: "auto",
+          backgroundColor: "#ffffff",
+        }}
+      >
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-[#2B1A24]">📸 Admin Image Search</h2>
           <button onClick={onClose} disabled={loading} className="text-2xl text-gray-400 hover:text-red-500 disabled:opacity-50">✕</button>
@@ -335,4 +351,6 @@ export default function ImageSearchModal({ isOpen, onClose }: { isOpen: boolean;
       </div>
     </div>
   );
+
+  return typeof document !== "undefined" ? createPortal(modal, document.body) : null;
 }
